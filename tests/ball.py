@@ -9,9 +9,9 @@ white_lamp_codomain = ['White lamp lights up', 'White lamp does not light up']
 
 def main():
     # --- Representing Table 1 with FXTensor ---
-    # The profile is [[input dimensions], [output dimensions]]
+    # The profile is [[input labels], [output labels]]
     # Input: ball color (2 types), Output: lamp color (3 types)
-    profile_a = [[len(ball_domain)], [len(lamp_colors)]]
+    profile_a = [[ball_domain], [lamp_colors]]
     # Data is represented as a Numpy array. The format is P(output|input)
     # data[input_index, output_index]
     data_a = np.array([
@@ -24,7 +24,7 @@ def main():
 
     # --- Representing Table 2 with FXTensor ---
     # Input: lamp color (3 types), Output: white lamp state (2 types)
-    profile_b = [[len(lamp_colors)], [len(white_lamp_codomain)]]
+    profile_b = [[lamp_colors], [white_lamp_codomain]]
     data_b = np.array([
         # If the input is 'Red' (index 0)
         [0.8, 0.2],  # Output: [P(lights up|Red), P(does not light up|Red)]
@@ -43,8 +43,12 @@ def main():
     print("Combined profile:", result_tensor.profile)
     print("Combined data (Numpy array):\n", result_tensor.data)
     print("\n--- Interpretation of results ---")
-    for i, ball_color in enumerate(ball_domain):
-        for j, lamp_status in enumerate(white_lamp_codomain):
+    num_inputs = len(result_tensor.profile[0])
+    num_outputs = len(result_tensor.profile[1])
+    for i in range(num_inputs):
+        ball_color = result_tensor.get_index_label(0, i)
+        for j in range(num_outputs):
+            lamp_status = result_tensor.get_index_label(1, j)
             prob = result_tensor.data[i, j]
             print(f"P({lamp_status} | {ball_color}) = {prob:.2f}")
 
