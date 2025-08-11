@@ -1,174 +1,222 @@
 # FXTensor
 
-FXTensor is a Python library for tensor-based calculations, particularly suited for representing and manipulating probabilistic systems, such as those found in category theory-based models of systems and processes. It uses NumPy for efficient numerical computation.
+FXTensor is a Python library for tensor-based computations, particularly suited for modeling probabilistic systems and processes inspired by category theory. It leverages NumPy for efficient numerical computations. The library primarily supports labeled indices for enhanced readability while maintaining compatibility with unlabeled numeric indices.
 
 ## Core Concepts
 
-A tensor in FXTensor is defined by its `profile` and `data`.
+An FXTensor is defined by its `profile` and `data`, with optional string labels to make tensors more intuitive and meaningful.
 
-- **Profile**: A list `[domain, codomain]` specifying the dimensions of the tensor's input and output indices. For example, `[[2], [3]]` represents a 2x3 matrix.
-- **Data**: A NumPy array holding the tensor's values. The number of axes in the array must match the total number of dimensions in the profile (length of domain + length of codomain).
+- **Profile**: A pair `[domain, codomain]` specifying the dimensions of input (domain) and output (codomain) indices. For labeled tensors, e.g., `[[['a', 'b']], [['x', 'y', 'z']]]` represents a 2x3 matrix with labeled rows and columns. For unlabeled tensors, `[[2], [3]]` specifies dimensions numerically.
+- **Labels (Optional)**: String labels can be assigned to each dimension, enhancing interpretability. For example, input axis labeled `['a', 'b']` and output axis labeled `['x', 'y', 'z']`. Unlabeled tensors have `labels` set to `None`.
+- **Data**: A NumPy array holding the tensor’s values. Its shape must match the total number of dimensions in the profile (`len(domain) + len(codomain)`).
 
-## A Simple Example: Weather Forecast
+## Usage Examples
 
-Let's model a simple weather system where the weather can be either **Sunny (0)** or **Rainy (1)**.
-
-- **State Tensor**: Represents the probability of the current weather. If we are certain it's sunny, the state is `[1, 0]`. This tensor has an empty domain `[]` and a codomain `[2]`.
-
-  ```python
-  # P(Weather=Sunny) = 1, P(Weather=Rainy) = 0
-  sunny_today = FXTensor([[], [2]], data=np.array([1, 0]))
-  ```
-
-- **Process Tensor**: Represents a probabilistic process, like a weather forecast. This is a matrix where rows are today's weather and columns are tomorrow's.
-
-  ```python
-  # P(Tomorrow | Today)
-  forecast_matrix = np.array([
-      [0.8, 0.2], # Today is Sunny -> Tomorrow is P(Sunny)=0.8, P(Rainy)=0.2
-      [0.4, 0.6]  # Today is Rainy -> Tomorrow is P(Sunny)=0.4, P(Rainy)=0.6
-  ])
-  forecast_tensor = FXTensor([[2], [2]], data=forecast_matrix)
-  ```
-
-- **Composition**: We can predict tomorrow's weather by composing today's state with the forecast tensor.
-
-  ```python
-  # The result is a new state tensor for tomorrow's weather probability
-  sunny_tomorrow = sunny_today.composition(forecast_tensor)
-  # sunny_tomorrow.data -> np.array([0.8, 0.2])
-  ```
-
-## Advanced Example: Multi-dimensional Systems
-
-Now, let's consider a more complex system: the joint probability of **Season** and **Weather** given a **Location**.
-
-- **Domain**: Location `{City, Countryside}` (size 2)
-- **Codomain**: Season `{Spring, Summer, Other}` (size 3) and Weather `{Sunny, Rainy}` (size 2)
-
-This can be represented by a tensor `P(Season, Weather | Location)` with profile `[[2], [3, 2]]`.
+### Basic Example: Labeled Tensor
 
 ```python
-# A tensor representing P(Season, Weather | Location)
-# The data is a 3D NumPy array of shape (2, 3, 2)
-# For simplicity, we use placeholder data here.
-process_data = np.random.rand(2, 3, 2)
-# Normalize to make it a valid Markov tensor (sum over codomain axes is 1)
-process_data /= process_data.sum(axis=(1, 2), keepdims=True)
+import numpy as np
+from fxtensor_salmon import FXTensor
 
-process_tensor = FXTensor([[2], [3, 2]], data=process_data)
+# Create a 2x3 matrix with string labels
+profile = [[['a', 'b']], [['x', 'y', 'z']]]
+data = np.array([
+    [0.1, 0.2, 0.7],  # a -> x, y, z
+    [0.3, 0.3, 0.4]   # b -> x, y, z
+])
+tensor = FXTensor(profile, data=data)
+
+# Access elements using labels
+assert tensor.get_label_index(0, 'a') == 0  # Index of label 'a' on input axis
+assert tensor.get_index_label(1, 2) == 'z'  # Label at index 2 on output axis
 ```
 
-## Key `FXTensor` Methods in Action
-
-Using our `process_tensor`, let's see what the main methods do.
-
-#### `marginalization(start_B)`
-This method sums over the codomain axes *from* a given index `start_B` (1-based).
+### Unlabeled Tensor
 
 ```python
-# Original profile: [[2], [3, 2]] -> P(Season, Weather | Location)
-# We want to get P(Season | Location) by summing out Weather.
-# The 'Weather' part starts at the 2nd element of the codomain.
-season_tensor = process_tensor.marginalization(start_B=2)
+# Create a 2x3 matrix with numeric indices
+profile = [[2], [3]]
+data = np.array([
+    [0.1, 0.2, 0.7],
+    [0.3, 0.3, 0.4]
+])
+tensor = FXTensor(profile, data=data)
+assert tensor.labels == (None, None)  # No labels
+```
 
-# Resulting profile: [[2], [3]]
-# Resulting data shape: (2, 3)
+### Creating Tensor from Strands
+
+```python
+# Create a tensor from labeled strands
+profile = [[['a', 'b']], [['x', 'y', 'z']]]
+strands = {
+    "[[['a']], [['x']]]": 0.1,
+    "[[['a']], [['y']]]": 0.2,
+    "[[['a']], [['z']]]": 0.7,
+    "[[['b']], [['x']]]": 0.3,
+    "[[['b']], [['y']]]": 0.3,
+    "[[['b']], [['z']]]": 0.4
+}
+tensor = FXTensor.from_strands(profile, strands)
+assert tensor.labels == ([['a', 'b']], [['x', 'y', 'z']])
+```
+
+### Labeled Tensor Composition
+
+```python
+# P(Y|X) where X={a,b}, Y={x,y}
+tensor1 = FXTensor(
+    [[['a', 'b']], [['x', 'y']]],
+    data=np.array([
+        [0.2, 0.8],  # a -> x, y
+        [0.6, 0.4]   # b -> x, y
+    ])
+)
+
+# P(Z|Y) where Y={x,y}, Z={p,q}
+tensor2 = FXTensor(
+    [[['x', 'y']], [['p', 'q']]],
+    data=np.array([
+        [0.3, 0.7],  # x -> p, q
+        [0.9, 0.1]   # y -> p, q
+    ])
+)
+
+# Composition: P(Z|X) = P(Y|X) ; P(Z|Y)
+result = tensor1.composition(tensor2)
+assert result.labels == ([['a', 'b']], [['p', 'q']])
+```
+
+### Labeled Tensor Product
+
+```python
+# P(X) where X={a,b}
+tensor1 = FXTensor(
+    [[], [['a', 'b']]],
+    data=np.array([0.3, 0.7])
+)
+
+# P(Y) where Y={x,y,z}
+tensor2 = FXTensor(
+    [[], [['x', 'y', 'z']]],
+    data=np.array([0.2, 0.3, 0.5])
+)
+
+# Tensor product: P(X,Y) = P(X) ⊗ P(Y)
+result = tensor1.tensor_product(tensor2)
+assert result.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+```
+
+## Simple Example: Weather Forecast (Labeled)
+
+Model a weather system with states “Sunny” or “Rainy.”
+
+- **State Tensor**: Represents today’s weather probability with labels. If today is certainly sunny, the state is `[1, 0]`.
+
+  ```python
+  weather_states = ['Sunny', 'Rainy']
+  sunny_today = FXTensor([[], [weather_states]], data=np.array([1, 0]))
+  ```
+
+- **Process Tensor**: Represents a weather forecast as a labeled Markov kernel.
+
+  ```python
+  forecast_matrix = np.array([
+      [0.8, 0.2],  # Sunny -> Sunny: 0.8, Rainy: 0.2
+      [0.4, 0.6]   # Rainy -> Sunny: 0.4, Rainy: 0.6
+  ])
+  forecast_tensor = FXTensor([[weather_states], [weather_states]], data=forecast_matrix)
+  ```
+
+- **Composition**: Predict tomorrow’s weather by composing today’s state with the forecast.
+
+  ```python
+  sunny_tomorrow = sunny_today.composition(forecast_tensor)
+  sunny_idx = sunny_tomorrow.get_label_index(1, 'Sunny')
+  p_sunny = sunny_tomorrow.data[sunny_idx]  # 0.8
+  ```
+
+## Advanced Example: Multidimensional System (Labeled)
+
+Model the joint probability of **Season** (Spring, Summer, Other) and **Weather** (Sunny, Rainy) given **Location** (Urban, Rural).
+
+- **Profile**: `[[['Urban', 'Rural']], [['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy']]]`
+- **Data**: A 3D array of shape `(2, 3, 2)`.
+
+  ```python
+  location_labels = ['Urban', 'Rural']
+  season_labels = ['Spring', 'Summer', 'Other']
+  weather_labels = ['Sunny', 'Rainy']
+  process_data = np.random.rand(2, 3, 2)
+  process_data /= process_data.sum(axis=(1, 2), keepdims=True)
+  process_tensor = FXTensor([[location_labels], [season_labels, weather_labels]], data=process_data)
+  ```
+
+### Key Method Applications
+
+#### `marginalization(start_B)`
+
+```python
+# Get P(Season | Location) by marginalizing Weather
+season_tensor = process_tensor.marginalization(start_B=2)
+assert season_tensor.labels == ([['Urban', 'Rural']], [['Spring', 'Summer', 'Other']])
 ```
 
 #### `discard_prefix(start_B)`
-This method sums over the codomain axes *before* a given index `start_B`.
 
 ```python
-# Original profile: [[2], [3, 2]] -> P(Season, Weather | Location)
-# We want to get P(Weather | Location) by summing out Season.
-# The 'Season' part is the prefix we want to discard.
+# Get P(Weather | Location) by marginalizing Season
 weather_tensor = process_tensor.discard_prefix(start_B=2)
-
-# Resulting profile: [[2], [2]]
-# Resulting data shape: (2, 2)
+assert weather_tensor.labels == ([['Urban', 'Rural']], [['Sunny', 'Rainy']])
 ```
 
 #### `conditionalization(start_B)`
-Calculates conditional probability by normalizing slices of the tensor.
 
 ```python
-# Original profile: [[2], [3, 2]] -> P(Season, Weather | Location)
-# We want to compute P(Weather | Location, Season).
-# This requires normalizing the data for each Location and Season.
+# Compute P(Weather | Location, Season)
 cond_tensor = process_tensor.conditionalization(start_B=2)
-
-# Resulting profile: [[2, 3], [2]]
-# Resulting data shape: (2, 3, 2)
+assert cond_tensor.labels == ([['Urban', 'Rural'], ['Spring', 'Summer', 'Other']], [['Sunny', 'Rainy']])
 ```
 
 #### `tensor_product(other)`
-Combines two independent systems.
 
 ```python
-# Let's introduce another system: P(Traffic) where Traffic is {Low, High}
-# This is a state tensor with profile [[], [2]]
-traffic_state = FXTensor([[], [2]], data=np.array([0.7, 0.3]))
-
-# The tensor product gives the joint probability P(Season, Weather, Traffic | Location)
+# Add Traffic (Low, High) system
+traffic_labels = ['Low', 'High']
+traffic_state = FXTensor([[], [traffic_labels]], data=np.array([0.7, 0.3]))
 joint_tensor = process_tensor.tensor_product(traffic_state)
-
-# Resulting profile: [[2], [3, 2, 2]]
-# Resulting data shape: (2, 3, 2, 2)
+assert joint_tensor.labels == (None, [['Urban', 'Rural'], ['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy'], ['Low', 'High']])
 ```
 
-## Theoretical Background: Relationship with Markov Categories
+## Theoretical Background: Relation to Markov Categories
 
-The design of this library, `fxtensor-salmon`, is deeply rooted in the concepts of **Markov Categories**, a framework from categorical probability theory. The terminology and ideas explained in the blog posts [1] and [2] serve as a crucial guide to understanding the library's functionality. This section explains the correspondence between the concepts described in these articles and the concrete implementation in `FXTensor`.
+The `fxtensor-salmon` library is designed based on the **Markov Category**, a framework for categorical probability theory.
 
-### Basic Elements of Markov Categories and FXTensor
+### Markov Category Basics
 
-A Markov category is a mathematical structure for abstractly handling probabilistic systems. Its main components are "objects" and "morphisms."
+- **Objects**: State spaces, represented in `FXTensor` as `domain` or `codomain` (e.g., `[['Urban', 'Rural']]` or `[[2]]`).
+- **Morphisms**: Markov kernels (probabilistic transitions), represented by `FXTensor` instances with profile and data.
 
-- **Object**: An "object" in a Markov category represents a **state space** where a random variable can take its values. In the context of `FXTensor`, we only deal with finite discrete spaces, so an object is simply represented by a list of dimensions, such as `[2]` or `[3, 2]`. `[2]` represents a state space with two elements, `{0, 1}`, while `[3, 2]` represents a composite state space formed by the **monoidal product (tensor product)** `3 ⊗ 2` of two state spaces, `{0, 1, 2}` and `{0, 1}`.
+### Categorical Operations and Methods
 
-- **Morphism**: A "morphism" `f: A -> B` represents a **probabilistic transition** from state space `A` to `B`, i.e., a **Markov kernel**. It is a function that, for each input `a ∈ A`, defines a probability distribution over the output space `B`. An `FXTensor` instance itself is a concrete representation of this "morphism." The tensor's `profile` `[domain, codomain]` corresponds to the source and target objects of the morphism, respectively. For example, `FXTensor([[2], [3]])` is a morphism from object `2` to object `3`, and its substance is stored in the `data` attribute as a probability matrix (Markov matrix) of shape `(2, 3)`.
+1. **Composition (`composition`)**: Combines morphisms `f: A -> B` and `g: B -> C`. Corresponds to connecting wires in string diagrams.
+2. **Tensor Product (`tensor_product`)**: Combines independent systems. Represented as side-by-side diagrams.
+3. **Discard (`marginalization`, `discard_prefix`)**: Sums over output axes to eliminate them.
+4. **Copy (`delta_tensor`)**: Deterministic copying operation.
 
-### Categorical Operations and FXTensor Methods
+### Probabilistic Properties
 
-The fundamental operations in a Markov category are implemented as methods in `FXTensor`.
-
-1.  **Composition**: The composition `f ; g` of two morphisms `f: A -> B` and `g: B -> C` corresponds to executing processes sequentially. This is realized by the `t1.composition(t2)` method. In string diagrams, this corresponds to connecting the output wires of `f` to the input wires of `g`, which computationally performs a tensor contraction (a generalization of matrix multiplication).
-
-2.  **Monoidal Product**: This operation takes two independent morphisms `f: A -> B` and `g: C -> D` and arranges them in parallel to create a new morphism `f ⊗ g: A ⊗ C -> B ⊗ D`. This corresponds to `t1.tensor_product(t2)`. It allows for the modeling of larger, composite systems by combining independent ones. In string diagrams, this corresponds to placing two diagrams side-by-side.
-
-3.  **Special Morphisms: Discard and Copy**
-    - **Discard**: `!: A -> I` is a morphism that completely ignores the information in state space `A` (where `I` is a one-dimensional terminal object). This is none other than the operation of marginalizing a probability distribution. `marginalization(start_B)` and `discard_prefix(start_B)` implement this concept of "discard." By summing out and eliminating a part of the codomain (specific output wires), they generate a new morphism with that information discarded.
-    - **Copy**: `Δ: A -> A ⊗ A` is a morphism that duplicates a state. It is generated by `FXTensor.delta(dims)`. Crucially, this operation is **deterministic**. Copying a probabilistic value is generally meaningless without assuming independence. The `delta` tensor is a deterministic tensor that maps an input `i` to `(i, i)`, having non-zero values only on its diagonal.
-
-### Probabilistic Properties and FXTensor
-Morphisms in a Markov category satisfies the condition that for each input, the sum of probabilities over the entire output is 1.
-
-- `is_markov()`: This method checks if a given tensor satisfies this normalization condition, i.e., if it is a valid Markov kernel.
-- `is_deterministic()`: A morphism is deterministic if, for each input, the output is uniquely determined with probability 1. This method verifies if the tensor has this property (i.e., each row contains exactly one 1, and the rest are 0s).
-
-### Tensor Calculus and String Diagrams
-
-The article [2] provides a detailed explanation of the correspondence between string diagrams and tensor calculus. The operations in `FXTensor` can be interpreted as algebraically performing these string diagram manipulations.
-
-- **Profile's `domain` and `codomain`**: These correspond to the bundles of input and output wires in a string diagram, respectively. Each number in the list represents the dimension of an individual wire.
-- **`composition`**: Connects diagrams vertically.
-- **`tensor_product`**: Places diagrams horizontally.
-- **`marginalization`**: Terminates some of the output wires, summing out their effects.
-
-In this way, `fxtensor-salmon` is a library that implements the abstract concepts of the powerful theoretical framework of Markov categories as concrete tensor computations based on NumPy. It is designed as a computational tool to execute the intuitive process operations depicted in string diagrams with rigor and efficiency.
+- `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0).
+- Labeled tensors enable intuitive interpretation via `get_label_index` and `get_index_label`.
 
 ## Testing
 
-The project uses `pytest` for testing. The tests are organized into classes in `tests/test_fxtensor.py` to group related functionality.
-
-To run the tests, execute the following command from the project root:
+Tests are implemented in `tests/test_fxtensor.py` using `pytest`.
 
 ```bash
 pytest
 ```
 
 ## References
-
-- [1] [マルコフ圏 A First Look -- 圏論的確率論の最良の定式化](https://m-hiyama.hatenablog.com/entry/2020/06/09/154044)
-- [2] [マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)
+- [1] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏 A First Look -- 圏論的確率論の最良の定式化](https://m-hiyama.hatenablog.com/entry/2020/06/09/154044)
+- [2] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)

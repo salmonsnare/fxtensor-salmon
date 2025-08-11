@@ -1,165 +1,217 @@
 # FXTensor
 
-FXTensorは、テンソルベースの計算を行うためのPythonライブラリです。特に、圏論に基づいたシステムやプロセスのモデルに見られるような、確率的なシステムを表現し操作するのに適しています。効率的な数値計算のためにNumPyを使用しています。
+FXTensorは、テンソルベースの計算を行うためのPythonライブラリであり、特に圏論に基づいた確率的なシステムやプロセスのモデル化に適しています。NumPyを活用して効率的な数値計算を実現しています。ラベル付きインデックスを主にサポートしつつ、ラベルなしの数値インデックスも扱える柔軟な設計が特徴です。
 
 ## 中核となる概念
 
-FXTensorにおけるテンソルは、その `profile` と `data` によって定義されます。
+FXTensorのテンソルは、`profile`（次元情報）と`data`（値）によって定義されます。オプションとして、文字列ラベルを付与することで、テンソルをより直感的で可読性の高いものにできます。
 
-- **プロファイル (Profile)**: `[domain, codomain]` というリストのペアで、テンソルの入力および出力インデックスの次元を指定します。例えば、`[[2], [3]]` は2x3の行列を表します。
-- **データ (Data)**: テンソルの値を保持するNumPy配列です。配列の軸の数は、プロファイル内の次元の総数（domainの長さ + codomainの長さ）と一致する必要があります。
+- **プロファイル (Profile)**: `[domain, codomain]` の形式で、入力（domain）と出力（codomain）の次元を指定します。ラベル付きの場合、例えば `[[['a', 'b']], [['x', 'y', 'z']]]` は、2つの入力ラベルと3つの出力ラベルを持つ2x3行列を表します。ラベルなしの場合、`[[2], [3]]` のように数値で次元を指定します。
+- **ラベル (Labels, オプション)**: 各次元に文字列ラベルを付与可能で、システムの意味を明確にします。例えば、入力軸に `['a', 'b']`、出力軸に `['x', 'y', 'z']` を設定できます。ラベルなしの場合は、`labels` は `None` になります。
+- **データ (Data)**: テンソルの値を保持するNumPy配列。形状はプロファイルに基づき、domainとcodomainの次元の合計（`len(domain) + len(codomain)`）と一致します。
 
-## 単純な例：天気予報
+## 使用例
 
-天候が **晴れ (0)** または **雨 (1)** のいずれかである単純な天候システムをモデル化してみましょう。
-
-- **状態テンソル**: 現在の天気の確率を表します。もし今日が晴れであることが確実なら、状態は `[1, 0]` となります。このテンソルは、空のdomain `[]` と `[2]` のcodomainを持ちます。
-
-  ```python
-  # P(Weather=Sunny) = 1, P(Weather=Rainy) = 0
-  sunny_today = FXTensor([[], [2]], data=np.array([1, 0]))
-  ```
-
-- **プロセス・テンソル**: 天気予報のような確率的なプロセスを表します。これは、行が今日の天気、列が明日の天気を示す行列です。
-
-  ```python
-  # P(Tomorrow | Today)
-  forecast_matrix = np.array([
-      [0.8, 0.2], # Today is Sunny -> Tomorrow is P(Sunny)=0.8, P(Rainy)=0.2
-      [0.4, 0.6]  # Today is Rainy -> Tomorrow is P(Sunny)=0.4, P(Rainy)=0.6
-  ])
-  forecast_tensor = FXTensor([[2], [2]], data=forecast_matrix)
-  ```
-
-- **合成 (Composition)**: 今日の状態と予報テンソルを合成することで、明日の天気を予測できます。
-
-  ```python
-  # 結果は明日の天気の確率を表す新しい状態テンソル
-  sunny_tomorrow = sunny_today.composition(forecast_tensor)
-  # sunny_tomorrow.data -> np.array([0.8, 0.2])
-  ```
-
-## 発展的な例：多次元システム
-
-次に、より複雑なシステム、すなわち **場所 (Location)** を与えられたときの **季節 (Season)** と **天気 (Weather)** の同時確率を考えてみましょう。
-
-- **Domain**: 場所 `{市街地, 田舎}` (サイズ 2)
-- **Codomain**: 季節 `{春, 夏, その他}` (サイズ 3) と 天気 `{晴れ, 雨}` (サイズ 2)
-
-これは、プロファイルが `[[2], [3, 2]]` であるテンソル `P(季節, 天気 | 場所)` で表現できます。
+### 基本的な例：ラベル付きテンソル
 
 ```python
-# P(季節, 天気 | 場所) を表すテンソル
-# データは形状が (2, 3, 2) の3次元NumPy配列
-# 簡単のため、ここではプレースホルダーデータを使用
-process_data = np.random.rand(2, 3, 2)
-# codomain軸の合計が1になるように正規化し、有効なマルコフテンソルにする
-process_data /= process_data.sum(axis=(1, 2), keepdims=True)
+import numpy as np
+from fxtensor_salmon import FXTensor
 
-process_tensor = FXTensor([[2], [3, 2]], data=process_data)
+# 文字列ラベルを使用して2x3行列を作成
+profile = [[['a', 'b']], [['x', 'y', 'z']]]
+data = np.array([
+    [0.1, 0.2, 0.7],  # a -> x, y, z
+    [0.3, 0.3, 0.4]   # b -> x, y, z
+])
+tensor = FXTensor(profile, data=data)
+
+# ラベルを使用して要素にアクセス
+assert tensor.get_label_index(0, 'a') == 0  # 入力軸でラベル 'a' のインデックス
+assert tensor.get_index_label(1, 2) == 'z'  # 出力軸でインデックス2のラベル
 ```
 
-## `FXTensor` の主要メソッドの実践
-
-この `process_tensor` を使って、主要なメソッドがどのように機能するかを見ていきましょう。
-
-#### `marginalization(start_B)`
-このメソッドは、与えられたインデックス `start_B`（1から始まる）*から* codomainの軸に沿って合計します。
+### ラベルなしテンソル
 
 ```python
-# 元のプロファイル: [[2], [3, 2]] -> P(季節, 天気 | 場所)
-# 天気を合計して消去し、P(季節 | 場所) を得たい
-# 「天気」の部分はcodomainの2番目の要素から始まる
-season_tensor = process_tensor.marginalization(start_B=2)
+# 数値インデックスを使用して2x3行列を作成
+profile = [[2], [3]]
+data = np.array([
+    [0.1, 0.2, 0.7],
+    [0.3, 0.3, 0.4]
+])
+tensor = FXTensor(profile, data=data)
+assert tensor.labels == (None, None)  # ラベルなし
+```
 
-# 結果のプロファイル: [[2], [3]]
-# 結果のデータ形状: (2, 3)
+### ストランドからテンソルを作成
+
+```python
+# ラベル付きストランドからテンソルを作成
+profile = [[['a', 'b']], [['x', 'y', 'z']]]
+strands = {
+    "[[['a']], [['x']]]": 0.1,
+    "[[['a']], [['y']]]": 0.2,
+    "[[['a']], [['z']]]": 0.7,
+    "[[['b']], [['x']]]": 0.3,
+    "[[['b']], [['y']]]": 0.3,
+    "[[['b']], [['z']]]": 0.4
+}
+tensor = FXTensor.from_strands(profile, strands)
+assert tensor.labels == ([['a', 'b']], [['x', 'y', 'z']])
+```
+
+### ラベル付きテンソルの合成
+
+```python
+# P(Y|X) ここで X={a,b}, Y={x,y}
+tensor1 = FXTensor(
+    [[['a', 'b']], [['x', 'y']]],
+    data=np.array([
+        [0.2, 0.8],  # a -> x, y
+        [0.6, 0.4]   # b -> x, y
+    ])
+)
+
+# P(Z|Y) ここで Y={x,y}, Z={p,q}
+tensor2 = FXTensor(
+    [[['x', 'y']], [['p', 'q']]],
+    data=np.array([
+        [0.3, 0.7],  # x -> p, q
+        [0.9, 0.1]   # y -> p, q
+    ])
+)
+
+# 合成: P(Z|X) = P(Y|X) ; P(Z|Y)
+result = tensor1.composition(tensor2)
+assert result.labels == ([['a', 'b']], [['p', 'q']])
+```
+
+### ラベル付きテンソル積
+
+```python
+# P(X) ここで X={a,b}
+tensor1 = FXTensor(
+    [[], [['a', 'b']]],
+    data=np.array([0.3, 0.7])
+)
+
+# P(Y) ここで Y={x,y,z}
+tensor2 = FXTensor(
+    [[], [['x', 'y', 'z']]],
+    data=np.array([0.2, 0.3, 0.5])
+)
+
+# テンソル積: P(X,Y) = P(X) ⊗ P(Y)
+result = tensor1.tensor_product(tensor2)
+assert result.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+```
+
+## 単純な例：天気予報（ラベル付き）
+
+天候が「晴れ」または「雨」のシステムをモデル化します。
+
+- **状態テンソル**: 現在の天気の確率をラベル付きで表現。今日が晴れなら、状態は `[1, 0]`。
+
+  ```python
+  weather_states = ['晴れ', '雨']
+  sunny_today = FXTensor([[], [weather_states]], data=np.array([1, 0]))
+  ```
+
+- **プロセス・テンソル**: 天気予報をラベル付きのマルコフ核として表現。
+
+  ```python
+  forecast_matrix = np.array([
+      [0.8, 0.2],  # 晴れ -> 晴れ: 0.8, 雨: 0.2
+      [0.4, 0.6]   # 雨 -> 晴れ: 0.4, 雨: 0.6
+  ])
+  forecast_tensor = FXTensor([[weather_states], [weather_states]], data=forecast_matrix)
+  ```
+
+- **合成**: 今日の状態と予報を合成し、明日の天気を予測。
+
+  ```python
+  sunny_tomorrow = sunny_today.composition(forecast_tensor)
+  sunny_idx = sunny_tomorrow.get_label_index(1, '晴れ')
+  p_sunny = sunny_tomorrow.data[sunny_idx]  # 0.8
+  ```
+
+## 発展的な例：多次元システム（ラベル付き）
+
+**場所**（市街地、田舎）に基づく **季節**（春、夏、その他）と **天気**（晴れ、雨）の同時確率をモデル化。
+
+- **プロファイル**: `[[['市街地', '田舎']], [['春', '夏', 'その他'], ['晴れ', '雨']]]`
+- **データ**: 形状 `(2, 3, 2)` の3次元配列。
+
+  ```python
+  location_labels = ['市街地', '田舎']
+  season_labels = ['春', '夏', 'その他']
+  weather_labels = ['晴れ', '雨']
+  process_data = np.random.rand(2, 3, 2)
+  process_data /= process_data.sum(axis=(1, 2), keepdims=True)
+  process_tensor = FXTensor([[location_labels], [season_labels, weather_labels]], data=process_data)
+  ```
+
+### 主要メソッドの実践
+
+#### `marginalization(start_B)`
+
+```python
+# P(季節 | 場所) を取得（天気を周辺化）
+season_tensor = process_tensor.marginalization(start_B=2)
+assert season_tensor.labels == ([['市街地', '田舎']], [['春', '夏', 'その他']])
 ```
 
 #### `discard_prefix(start_B)`
-このメソッドは、与えられたインデックス `start_B` *より前* のcodomainの軸に沿って合計します。
 
 ```python
-# 元のプロファイル: [[2], [3, 2]] -> P(季節, 天気 | 場所)
-# 季節を合計して消去し、P(天気 | 場所) を得たい
-# 「季節」の部分が、消去したいプレフィックス
+# P(天気 | 場所) を取得（季節を周辺化）
 weather_tensor = process_tensor.discard_prefix(start_B=2)
-
-# 結果のプロファイル: [[2], [2]]
-# 結果のデータ形状: (2, 2)
+assert weather_tensor.labels == ([['市街地', '田舎']], [['晴れ', '雨']])
 ```
 
 #### `conditionalization(start_B)`
-テンソルのスライスを正規化することにより、条件付き確率を計算します。
 
 ```python
-# 元のプロファイル: [[2], [3, 2]] -> P(季節, 天気 | 場所)
-# P(天気 | 場所, 季節) を計算したい
-# これには、各「場所」と「季節」に対してデータを正規化する必要がある
+# P(天気 | 場所, 季節) を計算
 cond_tensor = process_tensor.conditionalization(start_B=2)
-
-# 結果のプロファイル: [[2, 3], [2]]
-# 結果のデータ形状: (2, 3, 2)
+assert cond_tensor.labels == ([['市街地', '田舎'], ['春', '夏', 'その他']], [['晴れ', '雨']])
 ```
 
 #### `tensor_product(other)`
-2つの独立したシステムを結合します。
 
 ```python
-# 別のシステムを導入：P(交通量) ここで交通量は {少ない, 多い}
-# これはプロファイルが [[], [2]] の状態テンソル
-traffic_state = FXTensor([[], [2]], data=np.array([0.7, 0.3]))
-
-# テンソル積は、同時確率 P(季節, 天気, 交通量 | 場所) を与える
+# 交通量（少ない、多い）を追加
+traffic_labels = ['少ない', '多い']
+traffic_state = FXTensor([[], [traffic_labels]], data=np.array([0.7, 0.3]))
 joint_tensor = process_tensor.tensor_product(traffic_state)
-
-# 結果のプロファイル: [[2], [3, 2, 2]]
-# 結果のデータ形状: (2, 3, 2, 2)
+assert joint_tensor.labels == (None, [['市街地', '田舎'], ['春', '夏', 'その他'], ['晴れ', '雨'], ['少ない', '多い']])
 ```
 
 ## 理論的背景：マルコフ圏との関係
-本ライブラリ `fxtensor-salmon` の設計は、圏論的確率論の枠組みである**マルコフ圏 (Markov Category)** に基づきます。[1, 2] で述べられている概念と、本ライブラリの機能を理解する上で重要な指針となります。このセクションでは、これらの記事で述べられている概念と、`FXTensor` の具体的な実装との対応関係を解説します。
 
-### マルコフ圏の基本要素とFXTensor
-マルコフ圏は、確率的なシステムを抽象的に扱うための数学的構造です。その主要な構成要素は「対象」と「射」です。
+`fxtensor-salmon` は、圏論的確率論の **マルコフ圏** に基づいて設計されています。マルコフ圏は確率的なシステムを抽象的に扱う数学的構造です。
 
-- **対象 (Object)**: マルコフ圏における「対象」は、確率変数が値を取りうる**状態空間**を表します。`FXTensor` の文脈では、我々は有限離散空間のみを扱うため、対象は単純に次元のリスト、例えば `[2]` や `[3, 2]` によって表現されます。`[2]` は `{0, 1}` という2つの要素を持つ状態空間を、`[3, 2]` は `{0, 1, 2}` と `{0, 1}` という2つの状態空間の**モノイド積 (tensor product)** `3 ⊗ 2` によって構成される合成状態空間を表します。
+### マルコフ圏の基本要素
 
-- **射 (Morphism)**: 「射」`f: A -> B` は、状態空間 `A` から `B` への**確率的な遷移**、すなわち**マルコフ核 (Markov kernel)** を表します。これは、入力 `a ∈ A` が与えられるたびに、出力空間 `B` 上の確率分布を一つ定める関数です。`FXTensor` インスタンスそのものが、この「射」の具体的な表現です。テンソルの `profile` `[domain, codomain]` は、それぞれ射の始域と終域の対象に対応します。例えば、`FXTensor([[2], [3]])` は、対象 `2` から対象 `3` への射であり、その実体は `(2, 3)` の形状を持つ確率行列（マルコフ行列）として `data` 属性に格納されます。
+- **対象**: 状態空間。`FXTensor` では、`profile` の `domain` や `codomain`（例: `[['市街地', '田舎']]` や `[[2]]`）で表現。
+- **射**: マルコフ核（確率的な遷移）。`FXTensor` のインスタンスは、プロファイルとデータで射を表現。
 
-### 圏論的操作とFXTensorメソッド
+### 圏論的操作とメソッド
 
-マルコフ圏における基本的な操作は、FXTensorのメソッドとして実装されています。
+1. **合成 (`composition`)**: 射 `f: A -> B` と `g: B -> C` を結合。ストリング図ではワイヤーの接続。
+2. **テンソル積 (`tensor_product`)**: 独立システムの結合。ストリング図では図の並列配置。
+3. **破棄 (`marginalization`, `discard_prefix`)**: 出力の一部を合計して消去。
+4. **複製 (`delta_tensor`)**: 決定性の複製操作。
 
-1.  **合成 (Composition)**: `f: A -> B` と `g: B -> C` という2つの射の合成 `f ; g` は、プロセスを連続して実行することに対応します。これは `t1.composition(t2)` メソッドによって実現されます。ストリング図では、`f` の出力ワイヤーと `g` の入力ワイヤーを接続する操作に相当し、計算上はテンソルの縮約（行列の積の一般化）が実行されます。
+### 確率的性質
 
-2.  **モノイド積 (Tensor Product)**: `f: A -> B` と `g: C -> D` という2つの独立した射を並べて、新しい射 `f ⊗ g: A ⊗ C -> B ⊗ D` を作る操作です。これは `t1.tensor_product(t2)` に対応します。これにより、独立したシステムを結合して、より大きな複合システムをモデル化できます。ストリング図では、2つの図を横に並べる操作に相当します。
-
-3.  **特殊な射：破棄と複製**
-    - **破棄 (Discard)**: `!: A -> I` は、状態空間 `A` の情報を完全に無視する射です（`I` は1次元の終対象）。これは、確率分布を周辺化（marginalize）する操作に他なりません。`marginalization(start_B)` と `discard_prefix(start_B)` は、この「破棄」の概念を実装したものです。codomainの一部（特定の出力ワイヤー）を合計して消去することにより、その部分に対応する情報を破棄した新しい射を生成します。
-    - **複製 (Copy)**: `Δ: A -> A ⊗ A` は、状態を複製する射です。これは `FXTensor.delta(dims)` によって生成されます。重要なのは、この操作が決定性（deterministic）であるという点です。確率的な値を複製することは、一般には独立性を仮定しない限り意味を成しません。`delta` テンソルは、入力 `i` を `(i, i)` に写すような、対角線上にのみ値を持つ決定性テンソルです。
-
-### 確率的性質とFXTensor
-マルコフ圏の射は、各入力に対して、出力全体の確率の合計が1になるという条件をみたします。
-
-- `is_markov()`: 本メソッドは、与えられたテンソルが本条件をみたすかどうかを判定します。
-- `is_deterministic()`: 射が決定的であるとは、各入力に対して出力が確率1で一意に定まる場合を指します。本メソッドは、テンソルが決定的かどうかを検証します。
-
-### テンソル計算とストリング図
-[2] では、ストリング図とテンソル計算の対応が詳説されたえいます。`FXTensor` の操作は、まさにこのストリング図の操作を代数的に実行していると解釈できます。
-
-- **プロファイルの `domain` と `codomain`**: それぞれストリング図の入力ワイヤーと出力ワイヤーの束に対応します。リスト内の各数値が個々のワイヤーの次元です。
-- **`composition`**: 図を縦に接続します。
-- **`tensor_product`**: 図を横に並べます。
-- **`marginalization`**: 出力ワイヤーの一部を途中で終端させ、その影響を合計して消し去ります。
-
-このように、`fxtensor-salmon` は、マルコフ圏という強力な理論的背景を持つ抽象的な概念を、NumPyベースの具体的なテンソル計算として実装したライブラリです。ストリング図で描かれる直感的なプロセス操作を、厳密かつ効率的に実行するための計算ツールとして設計されています。
+- `is_markov()`: 出力の合計が1（または0）か検証。
+- ラベル付きテンソルでは、`get_label_index` と `get_index_label` で確率分布の意味を直感的に解釈可能。
 
 ## テスト
 
-このプロジェクトでは、テストに `pytest` を使用しています。テストは `tests/test_fxtensor.py` 内で、関連する機能をグループ化するためにクラスにまとめられています。
-
-テストを実行するには、プロジェクトのルートから以下のコマンドを実行してください:
+テストは `pytest` を使用し、`tests/test_fxtensor.py` に実装されています。
 
 ```bash
 pytest
