@@ -1,12 +1,13 @@
 # pyproject.toml
 
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fxtensor_salmon"
-version = "0.2.1"
+version = "0.2.2"
 authors = [
   { name="Tadachika Oki", email="sakesnare@gmail.com" }, 
 ]
