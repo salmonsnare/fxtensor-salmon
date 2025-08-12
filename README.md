@@ -104,7 +104,7 @@ tensor2 = FXTensor(
 
 # Tensor product: P(X,Y) = P(X) ⊗ P(Y)
 result = tensor1.tensor_product(tensor2)
-assert result.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+assert result.labels == ([], [['a', 'b'], ['x', 'y', 'z']])
 ```
 
 ## Simple Example: Weather Forecast (Labeled)
@@ -154,7 +154,81 @@ Model the joint probability of **Season** (Spring, Summer, Other) and **Weather*
 
 ### Key Method Applications
 
+#### `from_json(json_data)`
+
+Creates a tensor from JSON data, loading profile and data to instantiate an FXTensor.
+
+```python
+json_data = {
+    "profile": [[['a', 'b']], [['x', 'y']]],
+    "data": [[0.2, 0.8], [0.6, 0.4]]
+}
+tensor = FXTensor.from_json(json_data)
+assert tensor.labels == ([['a', 'b']], [['x', 'y']])
+```
+
+#### `from_strands(profile, strands)`
+
+Creates a tensor from strands (sparse string representations of non-zero elements).
+
+```python
+profile = [[['a', 'b']], [['x', 'y', 'z']]]
+strands = {
+    "[[['a']], [['x']]]": 0.1,
+    "[[['a']], [['y']]]": 0.2,
+    "[[['a']], [['z']]]": 0.7,
+    "[[['b']], [['x']]]": 0.3,
+    "[[['b']], [['y']]]": 0.3,
+    "[[['b']], [['z']]]": 0.4
+}
+tensor = FXTensor.from_strands(profile, strands)
+assert tensor.labels == ([['a', 'b']], [['x', 'y', 'z']])
+```
+
+#### `identity_tensor(list_x)`
+
+Creates an identity tensor for the given dimensions, supporting labeled or numeric inputs.
+
+```python
+labels = [['a', 'b']]
+id_tensor = FXTensor.identity_tensor(labels)
+assert id_tensor.labels == ([labels], [labels])
+```
+
+#### `unit_tensor(dims)`
+
+Creates a unit state tensor (all-ones vector) for the given dimensions.
+
+```python
+dims = [2, 3]
+unit = FXTensor.unit_tensor(dims)
+assert unit.profile == [[], dims]
+assert np.all(unit.data == 1)
+```
+
+#### `delta_tensor(dims)`
+
+Creates a delta tensor (identity matrix) for the given dimensions, used for copying.
+
+```python
+dims = [2]
+delta = FXTensor.delta_tensor(dims)
+assert delta.profile == [[dims], [dims]]
+```
+
+#### `conditionalization(concat_start_index)`
+
+Creates a conditional probability distribution from a joint state by dividing at the specified index in codomain.
+
+```python
+# Compute P(Weather | Location, Season)
+cond_tensor = process_tensor.conditionalization(concat_start_index=2)
+assert cond_tensor.labels == ([['Urban', 'Rural'], ['Spring', 'Summer', 'Other']], [['Sunny', 'Rainy']])
+```
+
 #### `marginalization(start_B)`
+
+Marginalizes out part of the codomain by summing over it.
 
 ```python
 # Get P(Season | Location) by marginalizing Weather
@@ -162,30 +236,17 @@ season_tensor = process_tensor.marginalization(start_B=2)
 assert season_tensor.labels == ([['Urban', 'Rural']], [['Spring', 'Summer', 'Other']])
 ```
 
-#### `discard_prefix(start_B)`
+#### `jointification(other)`
+
+Creates a joint state from two state tensors.
 
 ```python
-# Get P(Weather | Location) by marginalizing Season
-weather_tensor = process_tensor.discard_prefix(start_B=2)
-assert weather_tensor.labels == ([['Urban', 'Rural']], [['Sunny', 'Rainy']])
-```
-
-#### `conditionalization(start_B)`
-
-```python
-# Compute P(Weather | Location, Season)
-cond_tensor = process_tensor.conditionalization(start_B=2)
-assert cond_tensor.labels == ([['Urban', 'Rural'], ['Spring', 'Summer', 'Other']], [['Sunny', 'Rainy']])
-```
-
-#### `tensor_product(other)`
-
-```python
-# Add Traffic (Low, High) system
+# Define another state tensor
 traffic_labels = ['Low', 'High']
 traffic_state = FXTensor([[], [traffic_labels]], data=np.array([0.7, 0.3]))
-joint_tensor = process_tensor.tensor_product(traffic_state)
-assert joint_tensor.labels == (None, [['Urban', 'Rural'], ['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy'], ['Low', 'High']])
+# Create joint state
+joint_state = process_tensor.jointification(traffic_state)
+assert joint_state.labels == ([], [['Urban', 'Rural'], ['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy'], ['Low', 'High']])
 ```
 
 ## Theoretical Background: Relation to Markov Categories
@@ -201,7 +262,7 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 
 1. **Composition (`composition`)**: Combines morphisms `f: A -> B` and `g: B -> C`. Corresponds to connecting wires in string diagrams.
 2. **Tensor Product (`tensor_product`)**: Combines independent systems. Represented as side-by-side diagrams.
-3. **Discard (`marginalization`, `discard_prefix`)**: Sums over output axes to eliminate them.
+3. **Discard (`exclamation`)**: Sums over output axes to eliminate them. `exclamation(list_x)` creates a discarding tensor for the specified dimensions.
 4. **Copy (`delta_tensor`)**: Deterministic copying operation.
 
 ### Probabilistic Properties
