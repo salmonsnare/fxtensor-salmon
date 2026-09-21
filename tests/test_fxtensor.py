@@ -80,6 +80,55 @@ class TestSpecialTensors:
         assert excl_tensor.profile == [[2, 3], []]
         assert np.allclose(excl_tensor.data, np.ones((2, 3)))
 
+    def test_copy_tensor(self):
+        """Test diagonal copy X → X ⊗ X."""
+        copy = FXTensor.copy_tensor([2])
+        assert copy.profile == [[2], [2, 2]]
+        assert copy.data.shape == (2, 2, 2)
+        expected = np.zeros((2, 2, 2))
+        expected[0, 0, 0] = 1
+        expected[1, 1, 1] = 1
+        assert np.array_equal(copy.data, expected)
+        assert copy.is_markov()
+
+    def test_copy_tensor_compound(self):
+        """Copy of a compound object repeats the whole profile."""
+        copy = FXTensor.copy_tensor([2, 3])
+        assert copy.profile == [[2, 3], [2, 3, 2, 3]]
+        assert copy.data.shape == (2, 3, 2, 3, 2, 3)
+        for i in range(2):
+            for j in range(3):
+                assert copy.data[i, j, i, j, i, j] == 1
+        assert copy.data.sum() == 6
+
+    def test_copy_tensor_labeled(self):
+        """Labeled copy repeats the label groups on the codomain."""
+        copy = FXTensor.copy_tensor([['a', 'b']])
+        assert copy.labels == ([['a', 'b']], [['a', 'b'], ['a', 'b']])
+        assert copy.data[0, 0, 0] == 1
+        assert copy.data[1, 1, 1] == 1
+
+    def test_copy_tensor_n0_is_discard(self):
+        """n=0 is the discard (exclamation) morphism."""
+        assert FXTensor.copy_tensor([2, 3], n=0) == FXTensor.exclamation([2, 3])
+
+    def test_copy_tensor_n1_is_identity(self):
+        """n=1 is the identity morphism."""
+        assert FXTensor.copy_tensor([2, 3], n=1) == FXTensor.identity_tensor([2, 3])
+        labels = [['a', 'b']]
+        assert FXTensor.copy_tensor(labels, n=1) == FXTensor.identity_tensor(labels)
+
+    def test_copy_then_discard_is_identity(self):
+        """Counit: summing one copy leg recovers the identity."""
+        copy = FXTensor.copy_tensor([2])
+        identity = FXTensor.identity_tensor([2])
+        assert np.allclose(copy.data.sum(axis=1), identity.data)
+        assert np.allclose(copy.data.sum(axis=2), identity.data)
+
+    def test_copy_tensor_rejects_negative_n(self):
+        with pytest.raises(ValueError, match="n must be non-negative"):
+            FXTensor.copy_tensor([2], n=-1)
+
     def test_scalar_tensor(self):
         """Test scalar tensor (empty profile)."""
         scalar = FXTensor([[], []], data=np.array(5))

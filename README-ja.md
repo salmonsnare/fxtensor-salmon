@@ -261,6 +261,24 @@ id_tensor = FXTensor.identity_tensor(labels)
 assert id_tensor.labels == ([['a', 'b']], [['a', 'b']])
 ```
 
+#### `copy_tensor(list_x, n=2)`
+
+対角コピー射 `X → X^{⊗ n}` を作成します。`n=0` は破棄、`n=1` は恒等です。
+
+```python
+copy = FXTensor.copy_tensor([2])
+assert copy.profile == [[2], [2, 2]]
+assert np.array_equal(copy.data, [
+    [[1, 0],
+     [0, 0]],
+    [[0, 0],
+     [0, 1]],
+])
+
+labeled_copy = FXTensor.copy_tensor([['a', 'b']])
+assert labeled_copy.labels == ([['a', 'b']], [['a', 'b'], ['a', 'b']])
+```
+
 #### `unit_tensor(dims)`
 
 指定された次元に対する単位状態テンソル（すべて1のベクトル）を作成します。
@@ -280,6 +298,39 @@ assert np.all(unit.data == 1)
 dims = [2]
 delta = FXTensor.delta_tensor(dims)
 assert delta.profile == [[dims], [dims]]
+```
+
+## DisCoPy 連携
+
+`fxtensor-salmon` はラベル付きテンソルを [DisCoPy](https://discopy.org) の `Tensor` / `Box` に変換し、`discopy.markov` の図式（Copy / Discard / Swap / Id）を `FXTensor` として解釈できます。この追加機能は Python 3.10 以上が必要で、次で入ります。
+
+```shell
+pip install fxtensor-salmon[discopy]
+```
+
+プロファイルの各因子が1本のワイヤです。ラベルなしは `Dim` に対応し、ラベルはマルコフ型の名前に載せて `Box` から戻すときに復元します。
+
+```python
+from discopy.markov import Copy, Discard, Id, Swap, Ty
+from fxtensor_salmon import FXTensor
+from fxtensor_salmon.discopy import FXTensorFunctor, from_tensor, to_box, to_tensor
+
+kernel = FXTensor(
+    [[2], [2]],
+    data=np.array([[0.8, 0.2], [0.4, 0.6]]),
+)
+assert from_tensor(to_tensor(kernel)) == kernel
+
+weather = ['Sunny', 'Rainy']
+forecast = FXTensor([[weather], [weather]], data=np.array([[0.8, 0.2], [0.4, 0.6]]))
+box = to_box(forecast, name="forecast")
+
+x, y = Ty('x'), Ty('y')
+F = FXTensorFunctor({x: 2, y: 3}, {})
+assert F(Copy(x)) == FXTensor.copy_tensor([2])
+assert F(Discard(x)) == FXTensor.exclamation([2])
+assert F(Swap(x, y)) == FXTensor.swap([2], [3])
+assert F(Id(x)) == FXTensor.identity_tensor([2])
 ```
 
 ## 理論的背景：マルコフ圏との関係
@@ -302,7 +353,8 @@ assert delta.profile == [[dims], [dims]]
 | `partial_composition` | 一部のワイヤーだけ合成 | 出力の接頭は残し、接尾だけ次の核へつなぐ |
 | `jointification` | 2つの状態の同時化 | 独立な2つの状態から同時状態を作る（状態専用） |
 | `exclamation` | 破棄射 `X → I` | すべて1の破棄テンソルを作る |
-| `delta_tensor` | 複製射 | 決定性のコピー / 対角 |
+| `copy_tensor` | 複製射 `X → X^{⊗ n}` | 決定性のコピー / 対角（`n=0` は破棄） |
+| `delta_tensor` | 恒等（`identity_tensor` の別名） | 恒等核を作る |
 
 #### `composition` — 直列の接続
 
