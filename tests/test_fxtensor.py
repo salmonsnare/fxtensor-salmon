@@ -332,3 +332,40 @@ class TestStringLabels:
             np.array([0.2, 0.3, 0.5])
         )
         assert np.allclose(result.data, expected_data)
+
+
+class TestStrandSafety:
+    def test_from_strands_numeric(self):
+        """Numeric strands use 1-based indices nested like labeled keys."""
+        profile = [[2], [3]]
+        strands = {
+            "[[[1]], [[1]]]": 0.1,
+            "[[[1]], [[2]]]": 0.2,
+            "[[[1]], [[3]]]": 0.7,
+            "[[[2]], [[1]]]": 0.3,
+            "[[[2]], [[2]]]": 0.3,
+            "[[[2]], [[3]]]": 0.4,
+        }
+        tensor = FXTensor.from_strands(profile, strands)
+        assert tensor.profile == [[2], [3]]
+        assert np.allclose(tensor.data, [
+            [0.1, 0.2, 0.7],
+            [0.3, 0.3, 0.4],
+        ])
+
+    @pytest.mark.parametrize("strand_key", [
+        "__import__('os').system('id')",
+        "{'a': 1}",
+        "([['a']], [['x']])",
+        "open('x')",
+        "foo.bar",
+        "",
+        "[[[[",
+        "True",
+        "None",
+    ])
+    def test_from_strands_rejects_unsafe_keys(self, strand_key):
+        """Strand keys must be nested lists of int/str, not evaluated code."""
+        profile = [[['a', 'b']], [['x', 'y']]]
+        with pytest.raises(ValueError):
+            FXTensor.from_strands(profile, {strand_key: 1.0})

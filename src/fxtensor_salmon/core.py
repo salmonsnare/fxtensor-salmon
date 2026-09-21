@@ -4,6 +4,7 @@ from typing import List, Tuple, Union, Optional
 
 from .io import IOMixin
 from .operations import OperationsMixin
+from .profile import _parse_profile
 from .special import SpecialMixin
 
 
@@ -18,29 +19,8 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin):
         ],
         data: Optional[np.ndarray] = None,
     ) -> None:
-        if isinstance(profile, tuple):
-            domain_dims = list(profile[0])
-            codomain_dims = list(profile[1])
-            self._labels = None
-        else:
-            if len(profile) != 2:
-                raise ValueError("Invalid profile format")
-            is_numeric = True
-            for group in profile:
-                if group:
-                    if not isinstance(group[0], int):
-                        is_numeric = False
-                    break
-            if is_numeric:
-                domain_dims = list(profile[0])
-                codomain_dims = list(profile[1])
-                self._labels = None
-            else:
-                domain_labels = profile[0] if profile[0] else []
-                codomain_labels = profile[1] if profile[1] else []
-                self._labels = (domain_labels, codomain_labels)
-                domain_dims = [len(dim) for dim in domain_labels]
-                codomain_dims = [len(dim) for dim in codomain_labels]
+        domain_dims, codomain_dims, labels = _parse_profile(profile)
+        self._labels = labels
         self._profile = (domain_dims, codomain_dims)
 
         shape = tuple(domain_dims + codomain_dims)

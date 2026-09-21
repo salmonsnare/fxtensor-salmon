@@ -1,9 +1,10 @@
 from __future__ import annotations
 import numpy as np
 import json
-import ast
 from typing import List, Tuple, Dict, Any, Union
 from fractions import Fraction
+
+from .profile import _parse_profile, _parse_strand
 
 
 class IOMixin:
@@ -11,20 +12,8 @@ class IOMixin:
     def from_json(cls, json_data: Dict[str, Any]) -> 'FXTensor':
         """Create a tensor from JSON data."""
         profile = json_data["profile"]
-        if len(profile) != 2:
-            raise ValueError("Invalid profile format")
-        is_numeric = True
-        for group in profile:
-            if group:
-                if not isinstance(group[0], int):
-                    is_numeric = False
-                break
-        if is_numeric:
-            shape = tuple(profile[0] + profile[1]) if profile else ()
-        else:
-            domain_dims = [len(dim) for dim in profile[0]] if profile[0] else []
-            codomain_dims = [len(dim) for dim in profile[1]] if profile[1] else []
-            shape = tuple(domain_dims + codomain_dims)
+        domain_dims, codomain_dims, _labels = _parse_profile(profile)
+        shape = tuple(domain_dims + codomain_dims)
         data = np.array(json_data["data"]).reshape(shape)
         return cls(profile, data=data)
 
@@ -38,7 +27,7 @@ class IOMixin:
         tensor = cls(profile)
         is_labeled = tensor._labels is not None
         for strand_str, weight in strands.items():
-            domain_part, codomain_part = ast.literal_eval(strand_str)
+            domain_part, codomain_part = _parse_strand(strand_str)
             indices = []
             for part, label_idx in [(domain_part, 0), (codomain_part, 1)]:
                 for axis, dim_part in enumerate(part):
