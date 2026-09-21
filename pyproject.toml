@@ -25,9 +25,27 @@ dependencies = [
     "numpy>=1.20.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
 [project.urls]
 Homepage = "https://github.com/salmonsnare/fxtensor-salmon"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["fxtensor_salmon"]
+
+[tool.ruff]
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "E711"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/fxtensor_salmon/io.py" = ["F821"]
+"src/fxtensor_salmon/operations.py" = ["F821"]
+"src/fxtensor_salmon/special.py" = ["F821"]

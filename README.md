@@ -85,6 +85,10 @@ tensor2 = FXTensor(
 # Composition: P(Z|X) = P(Y|X) ; P(Z|Y)
 result = tensor1.composition(tensor2)
 assert result.labels == ([['a', 'b']], [['p', 'q']])
+assert np.allclose(result.data, [
+    [0.2*0.3 + 0.8*0.9, 0.2*0.7 + 0.8*0.1],  # a -> p, q
+    [0.6*0.3 + 0.4*0.9, 0.6*0.7 + 0.4*0.1],  # b -> p, q
+])
 ```
 
 ### Labeled Tensor Product
@@ -104,7 +108,11 @@ tensor2 = FXTensor(
 
 # Tensor product: P(X,Y) = P(X) ⊗ P(Y)
 result = tensor1.tensor_product(tensor2)
-assert result.labels == ([], [['a', 'b'], ['x', 'y', 'z']])
+assert result.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+assert np.allclose(result.data, np.outer(
+    np.array([0.3, 0.7]),
+    np.array([0.2, 0.3, 0.5]),
+))
 ```
 
 ## Simple Example: Weather Forecast (Labeled)
@@ -132,25 +140,83 @@ Model a weather system with states “Sunny” or “Rainy.”
 
   ```python
   sunny_tomorrow = sunny_today.composition(forecast_tensor)
-  sunny_idx = sunny_tomorrow.get_label_index(1, 'Sunny')
+  sunny_idx = sunny_tomorrow.get_label_index(0, 'Sunny')
   p_sunny = sunny_tomorrow.data[sunny_idx]  # 0.8
   ```
 
 ## Advanced Example: Multidimensional System (Labeled)
 
-Model the joint probability of **Season** (Spring, Summer, Other) and **Weather** (Sunny, Rainy) given **Location** (Urban, Rural).
+Model **Season** (Spring, Summer, Other) and **Weather** (Sunny, Rainy) given **Location** (Urban, Rural).
 
-- **Profile**: `[[['Urban', 'Rural']], [['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy']]]`
-- **Data**: A 3D array of shape `(2, 3, 2)`.
+`conditionalization` and `jointification` require a **state** (empty domain). `marginalization` also works on a kernel.
 
-  ```python
-  location_labels = ['Urban', 'Rural']
-  season_labels = ['Spring', 'Summer', 'Other']
-  weather_labels = ['Sunny', 'Rainy']
-  process_data = np.random.rand(2, 3, 2)
-  process_data /= process_data.sum(axis=(1, 2), keepdims=True)
-  process_tensor = FXTensor([[location_labels], [season_labels, weather_labels]], data=process_data)
-  ```
+### Kernel: P(Season, Weather | Location)
+
+Profile `[[['Urban', 'Rural']], [['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy']]]`, data shape `(2, 3, 2)`. Each location’s block sums to 1.
+
+```python
+location_labels = ['Urban', 'Rural']
+season_labels = ['Spring', 'Summer', 'Other']
+weather_labels = ['Sunny', 'Rainy']
+process_data = np.array([
+    [[0.2, 0.1], [0.3, 0.1], [0.2, 0.1]],  # Urban
+    [[0.1, 0.2], [0.2, 0.2], [0.1, 0.2]],  # Rural
+])
+process_tensor = FXTensor(
+    [[location_labels], [season_labels, weather_labels]],
+    data=process_data,
+)
+
+# P(Season | Location) by summing out Weather
+season_tensor = process_tensor.marginalization(start_B=2)
+assert season_tensor.labels == ([['Urban', 'Rural']], [['Spring', 'Summer', 'Other']])
+assert np.allclose(season_tensor.data, [
+    [0.3, 0.4, 0.3],
+    [0.3, 0.4, 0.3],
+])
+```
+
+### Joint state: P(Location, Season, Weather)
+
+A state has an empty domain. Split the last axis with `conditionalization(3)` to get `P(Weather | Location, Season)`.
+
+```python
+joint_data = np.array([
+    [[0.08, 0.04], [0.12, 0.04], [0.08, 0.04]],  # Urban, total 0.4
+    [[0.06, 0.12], [0.12, 0.12], [0.06, 0.12]],  # Rural, total 0.6
+])
+joint = FXTensor(
+    [[], [location_labels, season_labels, weather_labels]],
+    data=joint_data,
+)
+
+cond_tensor = joint.conditionalization(concat_start_index=3)
+assert cond_tensor.labels == (
+    [['Urban', 'Rural'], ['Spring', 'Summer', 'Other']],
+    [['Sunny', 'Rainy']],
+)
+assert cond_tensor.is_markov()
+assert np.allclose(cond_tensor.data, [
+    [[2/3, 1/3], [0.75, 0.25], [2/3, 1/3]],
+    [[1/3, 2/3], [0.50, 0.50], [1/3, 2/3]],
+])
+```
+
+### Jointification of two states
+
+Both arguments must be states. Empty-domain labels appear as `None`.
+
+```python
+location_state = FXTensor([[], [location_labels]], data=np.array([0.6, 0.4]))
+traffic_labels = ['Low', 'High']
+traffic_state = FXTensor([[], [traffic_labels]], data=np.array([0.7, 0.3]))
+joint_state = location_state.jointification(traffic_state)
+assert joint_state.labels == (None, [['Urban', 'Rural'], ['Low', 'High']])
+assert np.allclose(joint_state.data, [
+    [0.42, 0.18],
+    [0.28, 0.12],
+])
+```
 
 ### Key Method Applications
 
@@ -192,7 +258,7 @@ Creates an identity tensor for the given dimensions, supporting labeled or numer
 ```python
 labels = [['a', 'b']]
 id_tensor = FXTensor.identity_tensor(labels)
-assert id_tensor.labels == ([labels], [labels])
+assert id_tensor.labels == ([['a', 'b']], [['a', 'b']])
 ```
 
 #### `unit_tensor(dims)`
@@ -216,39 +282,6 @@ delta = FXTensor.delta_tensor(dims)
 assert delta.profile == [[dims], [dims]]
 ```
 
-#### `conditionalization(concat_start_index)`
-
-Creates a conditional probability distribution from a joint state by dividing at the specified index in codomain.
-
-```python
-# Compute P(Weather | Location, Season)
-cond_tensor = process_tensor.conditionalization(concat_start_index=2)
-assert cond_tensor.labels == ([['Urban', 'Rural'], ['Spring', 'Summer', 'Other']], [['Sunny', 'Rainy']])
-```
-
-#### `marginalization(start_B)`
-
-Marginalizes out part of the codomain by summing over it.
-
-```python
-# Get P(Season | Location) by marginalizing Weather
-season_tensor = process_tensor.marginalization(start_B=2)
-assert season_tensor.labels == ([['Urban', 'Rural']], [['Spring', 'Summer', 'Other']])
-```
-
-#### `jointification(other)`
-
-Creates a joint state from two state tensors.
-
-```python
-# Define another state tensor
-traffic_labels = ['Low', 'High']
-traffic_state = FXTensor([[], [traffic_labels]], data=np.array([0.7, 0.3]))
-# Create joint state
-joint_state = process_tensor.jointification(traffic_state)
-assert joint_state.labels == ([], [['Urban', 'Rural'], ['Spring', 'Summer', 'Other'], ['Sunny', 'Rainy'], ['Low', 'High']])
-```
-
 ## Theoretical Background: Relation to Markov Categories
 
 The `fxtensor-salmon` library is designed based on the **Markov Category**, a framework for categorical probability theory.
@@ -258,12 +291,100 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 - **Objects**: State spaces, represented in `FXTensor` as `domain` or `codomain` (e.g., `[['Urban', 'Rural']]` or `[[2]]`).
 - **Morphisms**: Markov kernels (probabilistic transitions), represented by `FXTensor` instances with profile and data.
 
-### Categorical Operations and Methods
+### Markov Category Operations
 
-1. **Composition (`composition`)**: Combines morphisms `f: A -> B` and `g: B -> C`. Corresponds to connecting wires in string diagrams.
-2. **Tensor Product (`tensor_product`)**: Combines independent systems. Represented as side-by-side diagrams.
-3. **Discard (`exclamation`)**: Sums over output axes to eliminate them. `exclamation(list_x)` creates a discarding tensor for the specified dimensions.
-4. **Copy (`delta_tensor`)**: Deterministic copying operation.
+| Method | Role | When to use |
+|---|---|---|
+| `composition` | Sequential composition `A→B` then `B→C` | Wire processes in series, or apply a kernel to a state |
+| `tensor_product` | Monoidal product | Place independent systems side by side |
+| `marginalization` | Discard a suffix of the outputs | Sum out axes you no longer need |
+| `conditionalization` | Joint state → kernel | Split a joint distribution into a conditional (states only) |
+| `partial_composition` | Compose only some output wires | Keep a prefix of the outputs and feed the suffix into another kernel |
+| `jointification` | Joint of two states | Combine two independent states (states only) |
+| `exclamation` | Discard morphism `X → I` | Build an all-ones discarding tensor |
+| `delta_tensor` | Copy morphism | Deterministic copy / diagonal |
+
+#### `composition` — sequential wiring
+
+Use when the codomain of `f` matches the domain of `g`. Same numbers as the labeled example above: `P(Z|X) = P(Y|X) ; P(Z|Y)`.
+
+```python
+result = tensor1.composition(tensor2)
+assert np.allclose(result.data, [[0.78, 0.22], [0.54, 0.46]])
+```
+
+#### `tensor_product` — independent systems in parallel
+
+Use to put two morphisms (or two states) next to each other without coupling.
+
+```python
+px = FXTensor([[], [['a', 'b']]], data=np.array([0.3, 0.7]))
+py = FXTensor([[], [['x', 'y', 'z']]], data=np.array([0.2, 0.3, 0.5]))
+pxy = px.tensor_product(py)
+assert pxy.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+assert np.allclose(pxy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
+```
+
+#### `marginalization` — drop a suffix of the outputs
+
+Use `start_B` (1-based) as the first codomain axis to sum out. A state with profile `[[], [2, 3]]` and `start_B=2` keeps the first axis.
+
+```python
+state = FXTensor([[], [2, 3]], data=np.array([
+    [0.1, 0.2, 0.3],
+    [0.15, 0.05, 0.2],
+]))
+marginal = state.marginalization(2)
+assert marginal.profile == [[], [2]]
+assert np.allclose(marginal.data, [0.6, 0.4])
+```
+
+#### `conditionalization` — joint state to a kernel
+
+Use only on a state. `concat_start_index` (1-based) is the first axis of the new codomain. A zero slice stays zero.
+
+```python
+joint_state = FXTensor([[], [2, 2]], data=np.array([[0.1, 0.2], [0.0, 0.0]]))
+kernel = joint_state.conditionalization(2)
+assert kernel.profile == [[2], [2]]
+assert kernel.is_markov()
+assert np.allclose(kernel.data, [[1/3, 2/3], [0.0, 0.0]])
+```
+
+#### `partial_composition` — compose only the trailing outputs
+
+For `f: A → B ⊗ C` and `g: C → D`, `f.partial_composition(g, 2)` keeps `B` and composes on `C`, giving `A → B ⊗ D`.
+
+```python
+f = FXTensor([[2], [2, 2]], data=np.array([
+    [[1.0, 0.0], [0.0, 1.0]],
+    [[0.0, 1.0], [1.0, 0.0]],
+]))
+g = FXTensor([[2], [2]], data=np.array([
+    [0.2, 0.8],
+    [0.6, 0.4],
+]))
+partial = f.partial_composition(g, 2)
+assert partial.profile == [[2], [2, 2]]
+assert np.allclose(partial.data, [
+    [[0.2, 0.8], [0.6, 0.4]],
+    [[0.6, 0.4], [0.2, 0.8]],
+])
+```
+
+`concat_start_index=1` composes on the whole codomain (the case covered by the tests).
+
+#### `jointification` — two states into one joint
+
+Same numbers as the tensor product of states; both domains must be empty.
+
+```python
+px = FXTensor([[], [['a', 'b']]], data=np.array([0.3, 0.7]))
+py = FXTensor([[], [['x', 'y', 'z']]], data=np.array([0.2, 0.3, 0.5]))
+joint_xy = px.jointification(py)
+assert joint_xy.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
+assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
+```
 
 ### Probabilistic Properties
 

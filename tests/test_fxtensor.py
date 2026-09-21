@@ -332,3 +332,95 @@ class TestStringLabels:
             np.array([0.2, 0.3, 0.5])
         )
         assert np.allclose(result.data, expected_data)
+
+
+class TestStrandSafety:
+    def test_from_strands_numeric(self):
+        """Numeric strands use 1-based indices nested like labeled keys."""
+        profile = [[2], [3]]
+        strands = {
+            "[[[1]], [[1]]]": 0.1,
+            "[[[1]], [[2]]]": 0.2,
+            "[[[1]], [[3]]]": 0.7,
+            "[[[2]], [[1]]]": 0.3,
+            "[[[2]], [[2]]]": 0.3,
+            "[[[2]], [[3]]]": 0.4,
+        }
+        tensor = FXTensor.from_strands(profile, strands)
+        assert tensor.profile == [[2], [3]]
+        assert np.allclose(tensor.data, [
+            [0.1, 0.2, 0.7],
+            [0.3, 0.3, 0.4],
+        ])
+
+    @pytest.mark.parametrize("strand_key", [
+        "__import__('os').system('id')",
+        "{'a': 1}",
+        "([['a']], [['x']])",
+        "open('x')",
+        "foo.bar",
+        "",
+        "[[[[",
+        "True",
+        "None",
+    ])
+    def test_from_strands_rejects_unsafe_keys(self, strand_key):
+        """Strand keys must be nested lists of int/str, not evaluated code."""
+        profile = [[['a', 'b']], [['x', 'y']]]
+        with pytest.raises(ValueError):
+            FXTensor.from_strands(profile, {strand_key: 1.0})
+
+
+class TestEqualityCopy:
+    def test_equal_same_values(self):
+        data = np.array([[0.2, 0.8], [0.5, 0.5]])
+        left = FXTensor([[2], [2]], data=data)
+        right = FXTensor([[2], [2]], data=np.array([[0.2, 0.8], [0.5, 0.5]]))
+        assert left == right
+        assert hash(left) == hash(right)
+
+    def test_unequal_outside_tolerance(self):
+        left = FXTensor([[2], [2]], data=np.array([[1.0, 0.0], [0.0, 1.0]]))
+        right = FXTensor([[2], [2]], data=np.array([[1.0, 0.0], [0.0, 0.9]]))
+        assert left != right
+
+    def test_unequal_when_labels_differ(self):
+        data = np.array([[0.2, 0.8], [0.5, 0.5]])
+        labeled = FXTensor([[['a', 'b']], [['x', 'y']]], data=data)
+        numeric = FXTensor([[2], [2]], data=data)
+        assert labeled != numeric
+
+    def test_not_equal_to_other_types(self):
+        tensor = FXTensor([[2], [2]], data=np.array([[1.0, 0.0], [0.0, 1.0]]))
+        assert tensor != [[2], [2]]
+        assert tensor != None
+
+    def test_copy_is_independent(self):
+        original = FXTensor([[2], [2]], data=np.array([[0.25, 0.75], [0.5, 0.5]]))
+        cloned = original.copy()
+        assert cloned == original
+        assert cloned is not original
+        assert cloned.data is not original.data
+        cloned.data[0, 0] = 0.0
+        assert original.data[0, 0] == 0.25
+
+    def test_labeled_copy_keeps_labels(self):
+        original = FXTensor(
+            [[['a', 'b']], [['x', 'y']]],
+            data=np.array([[0.2, 0.8], [0.6, 0.4]]),
+        )
+        cloned = original.copy()
+        assert cloned == original
+        assert cloned.labels == ([['a', 'b']], [['x', 'y']])
+
+    def test_copy_dunder(self):
+        original = FXTensor([[1], [2]], data=np.array([[0.3, 0.7]]))
+        assert original.__copy__() == original
+
+    def test_is_markov_within_shared_tolerance(self):
+        data = np.array([
+            [0.1, 0.2, 0.7 + 1e-12],
+            [0.2, 0.3, 0.5],
+        ])
+        tensor = FXTensor([[2], [3]], data=data)
+        assert tensor.is_markov()
