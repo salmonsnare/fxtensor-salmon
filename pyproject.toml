@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fxtensor_salmon"
-version = "1.0.0"
+version = "1.1.0"
 authors = [
   { name="Tadachika Oki", email="sakesnare@gmail.com" }, 
 ]
@@ -30,6 +30,9 @@ dev = [
     "pytest",
     "ruff",
 ]
+discopy = [
+    "discopy>=1.2,<2",
+]
 
 [project.urls]
 Homepage = "https://github.com/salmonsnare/fxtensor-salmon"
@@ -49,3 +52,4 @@ ignore = ["E501", "E711"]
 "src/fxtensor_salmon/io.py" = ["F821"]
 "src/fxtensor_salmon/operations.py" = ["F821"]
 "src/fxtensor_salmon/special.py" = ["F821"]
+"tests/test_discopy.py" = ["E402"]

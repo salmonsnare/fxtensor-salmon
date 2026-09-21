@@ -44,6 +44,30 @@ class SpecialMixin:
             return cls([dims, dims], data=data)
 
     @classmethod
+    def copy_tensor(cls, list_x: Union[List[int], List[List[str]]], n: int = 2) -> 'FXTensor':
+        """Create a diagonal copy tensor ``X → X^{⊗ n}``.
+
+        ``n=0`` is discard (exclamation), ``n=1`` is identity.
+        """
+        if n < 0:
+            raise ValueError("n must be non-negative")
+        if not list_x:
+            return cls([[], []], data=np.array(1.0))
+        labeled = isinstance(list_x[0], list)
+        if labeled:
+            dims = [len(dim) for dim in list_x]
+            profile = [list_x, list(list_x) * n]
+        else:
+            dims = list(list_x)
+            profile = [dims, dims * n]
+        if n == 0:
+            return cls(profile, data=np.ones(tuple(dims)))
+        data = np.zeros(tuple(dims * (1 + n)))
+        for idx in np.ndindex(*dims):
+            data[idx * (1 + n)] = 1
+        return cls(profile, data=data)
+
+    @classmethod
     def unit_tensor(cls, dims: List[int]) -> 'FXTensor':
         """Create a unit tensor (all ones) with the given dimensions."""
         return cls([[], dims], data=np.ones(tuple(dims)))

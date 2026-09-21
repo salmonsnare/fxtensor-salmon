@@ -261,6 +261,24 @@ id_tensor = FXTensor.identity_tensor(labels)
 assert id_tensor.labels == ([['a', 'b']], [['a', 'b']])
 ```
 
+#### `copy_tensor(list_x, n=2)`
+
+Creates a diagonal copy morphism `X → X^{⊗ n}`. `n=0` is discard, `n=1` is identity.
+
+```python
+copy = FXTensor.copy_tensor([2])
+assert copy.profile == [[2], [2, 2]]
+assert np.array_equal(copy.data, [
+    [[1, 0],
+     [0, 0]],
+    [[0, 0],
+     [0, 1]],
+])
+
+labeled_copy = FXTensor.copy_tensor([['a', 'b']])
+assert labeled_copy.labels == ([['a', 'b']], [['a', 'b'], ['a', 'b']])
+```
+
 #### `unit_tensor(dims)`
 
 Creates a unit state tensor (all-ones vector) for the given dimensions.
@@ -280,6 +298,39 @@ Creates a delta tensor (identity matrix) for the given dimensions, used for copy
 dims = [2]
 delta = FXTensor.delta_tensor(dims)
 assert delta.profile == [[dims], [dims]]
+```
+
+## DisCoPy integration
+
+`fxtensor-salmon` can convert labeled tensors to [DisCoPy](https://discopy.org) `Tensor` / `Box` values and interpret `discopy.markov` diagrams (Copy, Discard, Swap, Id) as `FXTensor` morphisms. This extra requires Python 3.10+ and is installed with:
+
+```shell
+pip install fxtensor-salmon[discopy]
+```
+
+Each profile factor is one wire. Unlabeled tensors map to `Dim`; labels are stored on Markov type names and restored when converting a `Box` back.
+
+```python
+from discopy.markov import Copy, Discard, Id, Swap, Ty
+from fxtensor_salmon import FXTensor
+from fxtensor_salmon.discopy import FXTensorFunctor, from_tensor, to_box, to_tensor
+
+kernel = FXTensor(
+    [[2], [2]],
+    data=np.array([[0.8, 0.2], [0.4, 0.6]]),
+)
+assert from_tensor(to_tensor(kernel)) == kernel
+
+weather = ['Sunny', 'Rainy']
+forecast = FXTensor([[weather], [weather]], data=np.array([[0.8, 0.2], [0.4, 0.6]]))
+box = to_box(forecast, name="forecast")
+
+x, y = Ty('x'), Ty('y')
+F = FXTensorFunctor({x: 2, y: 3}, {})
+assert F(Copy(x)) == FXTensor.copy_tensor([2])
+assert F(Discard(x)) == FXTensor.exclamation([2])
+assert F(Swap(x, y)) == FXTensor.swap([2], [3])
+assert F(Id(x)) == FXTensor.identity_tensor([2])
 ```
 
 ## Theoretical Background: Relation to Markov Categories
@@ -302,7 +353,8 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 | `partial_composition` | Compose only some output wires | Keep a prefix of the outputs and feed the suffix into another kernel |
 | `jointification` | Joint of two states | Combine two independent states (states only) |
 | `exclamation` | Discard morphism `X → I` | Build an all-ones discarding tensor |
-| `delta_tensor` | Copy morphism | Deterministic copy / diagonal |
+| `copy_tensor` | Copy morphism `X → X^{⊗ n}` | Deterministic copy / diagonal (`n=0` is discard) |
+| `delta_tensor` | Identity (alias of `identity_tensor`) | Build an identity kernel |
 
 #### `composition` — sequential wiring
 
