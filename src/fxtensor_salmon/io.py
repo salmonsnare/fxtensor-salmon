@@ -4,7 +4,7 @@ import json
 from typing import List, Tuple, Dict, Any, Union
 from fractions import Fraction
 
-from .profile import _parse_profile, _parse_strand
+from .profile import _constructor_profile, _parse_profile, _parse_strand
 
 
 class IOMixin:
@@ -42,10 +42,7 @@ class IOMixin:
 
     def to_json(self) -> dict:
         """Convert the tensor to a JSON-serializable dictionary."""
-        if self._labels is not None:
-            profile = [self._labels[0], self._labels[1]]
-        else:
-            profile = [list(self._profile[0]), list(self._profile[1])]
+        profile = _constructor_profile(self._profile[0], self._profile[1], self._labels)
         data = self.data.tolist()
         return {
             "profile": profile,

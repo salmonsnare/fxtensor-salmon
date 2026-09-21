@@ -4,12 +4,15 @@ from typing import List, Tuple, Union, Optional
 
 from .io import IOMixin
 from .operations import OperationsMixin
-from .profile import _parse_profile
+from .profile import _constructor_profile, _parse_profile
 from .special import SpecialMixin
 
 
 class FXTensor(IOMixin, OperationsMixin, SpecialMixin):
     """A tensor with support for string-labeled dimensions and tensor operations."""
+
+    _RTOL = 1e-05
+    _ATOL = 1e-08
 
     def __init__(
         self,
@@ -75,3 +78,36 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin):
             return f"FXTensor(profile={self.profile}, labels=({domain_labels}, {codomain_labels}), shape={self.data.shape})"
         else:
             return f"FXTensor(profile={self.profile}, shape={self.data.shape})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FXTensor):
+            return NotImplemented
+        return (
+            self._profile == other._profile
+            and self._labels == other._labels
+            and np.allclose(self.data, other.data, rtol=self._RTOL, atol=self._ATOL)
+        )
+
+    def __hash__(self) -> int:
+        if self._labels is None:
+            labels_key = None
+        else:
+            labels_key = (
+                tuple(tuple(dim) for dim in self._labels[0]),
+                tuple(tuple(dim) for dim in self._labels[1]),
+            )
+        return hash((
+            tuple(self._profile[0]),
+            tuple(self._profile[1]),
+            labels_key,
+            self.data.shape,
+            self.data.dtype.str,
+            self.data.tobytes(),
+        ))
+
+    def copy(self) -> 'FXTensor':
+        profile = _constructor_profile(self._profile[0], self._profile[1], self._labels)
+        return type(self)(profile, data=np.array(self.data, copy=True))
+
+    def __copy__(self) -> 'FXTensor':
+        return self.copy()

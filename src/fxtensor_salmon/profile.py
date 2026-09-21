@@ -36,6 +36,13 @@ def _parse_profile(
     return domain_dims, codomain_dims, labels
 
 
+def _constructor_profile(domain_dims, codomain_dims, labels):
+    """Choose a labeled profile when labels are present, else numeric dims."""
+    if labels and (labels[0] or labels[1]):
+        return [labels[0], labels[1]]
+    return [list(domain_dims), list(codomain_dims)]
+
+
 def _parse_strand(strand_str: str) -> Any:
     """Parse a strand key as nested lists of int/str. Does not evaluate code."""
     try:
