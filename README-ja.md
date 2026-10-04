@@ -440,7 +440,7 @@ assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 
 ### 確率的性質
 
-- `is_markov()`: 出力の合計が1（または0）か検証。
+- `is_markov()`: 出力の合計が1（または0）か検証。状態（domain が空）は常に `False` を返します。状態の正規化は `np.isclose(state.data.sum(), 1)` で確認してください。
 - ラベル付きテンソルでは、`get_label_index` と `get_index_label` で確率分布の意味を直感的に解釈可能。
 
 ## テスト

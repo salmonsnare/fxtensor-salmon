@@ -440,7 +440,7 @@ assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 
 ### Probabilistic Properties
 
-- `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0).
+- `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0). States (empty domain) always return `False`; check `np.isclose(state.data.sum(), 1)` for a normalized state.
 - Labeled tensors enable intuitive interpretation via `get_label_index` and `get_index_label`.
 
 ## Testing

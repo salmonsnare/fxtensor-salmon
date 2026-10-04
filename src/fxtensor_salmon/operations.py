@@ -29,17 +29,30 @@ class OperationsMixin:
         new_domain_labels = (self._labels[0] if self._labels is not None else []) + (other._labels[0] if other._labels is not None else [])
         new_codomain_labels = (self._labels[1] if self._labels is not None else []) + (other._labels[1] if other._labels is not None else [])
         new_labels = (new_domain_labels, new_codomain_labels) if new_domain_labels or new_codomain_labels else None
+        # Mixing labeled and unlabeled factors cannot be represented; drop labels
+        # (as composition does) unless the unlabeled side has no axes at all.
+        if new_labels is not None and (
+            (self._labels is None and self.data.ndim > 0)
+            or (other._labels is None and other.data.ndim > 0)
+        ):
+            new_labels = None
         self_dom_len = len(self._profile[0])
         other_dom_len = len(other._profile[0])
         self_cod_len = len(self._profile[1])
-        other_cod_len = len(self._profile[1])
+        other_cod_len = len(other._profile[1])
         self_reshaped = self.data.reshape(self._profile[0] + [1]*other_dom_len + self._profile[1] + [1]*other_cod_len)
         other_reshaped = other.data.reshape([1]*self_dom_len + other._profile[0] + [1]*self_cod_len + other._profile[1])
         new_data = self_reshaped * other_reshaped
         return self._spawn(new_domain, new_codomain, new_labels, new_data)
 
     def is_markov(self) -> bool:
-        """Check if the tensor is a Markov tensor."""
+        """Check if the tensor is a Markov tensor.
+
+        For every domain index the codomain slice must sum to 1 (or 0, so
+        that zero rows produced by :meth:`conditionalization` are accepted).
+        States (empty domain) always return ``False``; check
+        ``np.isclose(state.data.sum(), 1)`` for a normalized state.
+        """
         if not self._profile[0]:
             return False
         codomain_axes = tuple(range(len(self._profile[0]), self.data.ndim))
