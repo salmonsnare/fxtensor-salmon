@@ -80,6 +80,78 @@ class OperationsMixin:
         new_data = self.data / sum_over_codomain
         return self._spawn(new_domain, new_codomain, new_labels, new_data)
 
+    def conditional(self, concat_start_index: int) -> 'FXTensor':
+        """Conditional of a kernel ``f: A → X ⊗ Y`` as ``A ⊗ X → Y``.
+
+        Generalizes :meth:`conditionalization` to tensors with a domain.
+        ``concat_start_index`` (1-based) is the first codomain axis of
+        ``Y``. Entries with ``f_X(x|a) = 0`` stay zero, as in
+        :meth:`conditionalization`. For a state the result equals
+        ``conditionalization(concat_start_index)``.
+        """
+        codomain_len = len(self._profile[1])
+        if not (0 < concat_start_index <= codomain_len):
+            raise ValueError("concat_start_index is out of bounds")
+        split_point = concat_start_index - 1
+        domain_len = len(self._profile[0])
+        new_domain = self._profile[0] + self._profile[1][:split_point]
+        new_codomain = self._profile[1][split_point:]
+        new_labels = None
+        if self._labels is not None:
+            new_labels = (
+                self._labels[0] + self._labels[1][:split_point],
+                self._labels[1][split_point:],
+            )
+        sum_axes = tuple(range(domain_len + split_point, self.data.ndim))
+        denom = np.sum(self.data, axis=sum_axes, keepdims=True)
+        denom[denom == 0] = 1
+        return self._spawn(new_domain, new_codomain, new_labels, self.data / denom)
+
+    def bayesian_inversion(self, prior: 'FXTensor') -> 'FXTensor':
+        """Bayesian inversion of ``f: X → Y`` with respect to ``prior: I → X``.
+
+        Returns ``f†: Y → X`` with ``f†(x|y) = prior(x) f(y|x) / Σ_x' prior(x') f(y|x')``
+        (Cho & Jacobs 2017). Rows with zero evidence stay zero. Labels are
+        swapped from ``self`` (or taken from ``prior`` for ``X``).
+        """
+        if prior._profile[0]:
+            raise ValueError("prior must be a state (empty domain)")
+        if prior._profile[1] != self._profile[0]:
+            raise ValueError("prior codomain must match the domain of self")
+        x_len = len(self._profile[0])
+        y_len = len(self._profile[1])
+        prior_data = prior.data.reshape(self._profile[0] + [1] * y_len)
+        joint = prior_data * self.data
+        evidence = np.sum(joint, axis=tuple(range(x_len)), keepdims=True)
+        evidence[evidence == 0] = 1
+        order = list(range(x_len, x_len + y_len)) + list(range(x_len))
+        new_data = (joint / evidence).transpose(order)
+        x_labels = None
+        if self._labels is not None and self._labels[0]:
+            x_labels = self._labels[0]
+        elif prior._labels is not None and prior._labels[1]:
+            x_labels = prior._labels[1]
+        y_labels = self._labels[1] if self._labels is not None and self._labels[1] else None
+        new_labels = None
+        if (x_labels is not None or not x_len) and (y_labels is not None or not y_len):
+            new_labels = (y_labels or [], x_labels or [])
+        return self._spawn(self._profile[1], self._profile[0], new_labels, new_data)
+
+    def is_deterministic(self) -> bool:
+        """Check whether every codomain slice is a point mass (one-hot).
+
+        In finite stochastic matrices this is equivalent to Fritz's
+        definition ``f ; copy = copy ; (f ⊗ f)`` for Markov kernels. Zero
+        slices are not considered deterministic.
+        """
+        dom_size = int(np.prod(self._profile[0])) if self._profile[0] else 1
+        rows = np.asarray(self.data, dtype=float).reshape(dom_size, -1)
+        rtol = type(self)._RTOL
+        atol = type(self)._ATOL
+        zero = np.isclose(rows, 0, rtol=rtol, atol=atol)
+        one = np.isclose(rows, 1, rtol=rtol, atol=atol)
+        return bool(np.all(zero | one) and np.all(one.sum(axis=1) == 1))
+
     def marginalization(self, start_B: int) -> 'FXTensor':
         """Marginalize out a part of the codomain by summing over it."""
         domain_len = len(self._profile[0])

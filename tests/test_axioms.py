@@ -156,10 +156,18 @@ class TestMarkovProperties:
         f = deterministic_kernel([2, 2], [3], 5)
         lhs = f.composition(FXTensor.copy_tensor([3]))
         rhs = FXTensor.copy_tensor([2, 2]).composition(f.tensor_product(f))
+        assert f.is_deterministic()
         assert lhs == rhs
 
     def test_random_kernel_does_not_commute_with_copy(self):
         f = random_kernel([2], [3], 6)
         lhs = f.composition(FXTensor.copy_tensor([3]))
         rhs = FXTensor.copy_tensor([2]).composition(f.tensor_product(f))
+        assert not f.is_deterministic()
         assert lhs != rhs
+
+    def test_structural_morphisms_are_deterministic(self):
+        assert FXTensor.copy_tensor([2, 3]).is_deterministic()
+        assert FXTensor.swap([2], [3]).is_deterministic()
+        assert FXTensor.identity_tensor([3]).is_deterministic()
+        assert FXTensor.exclamation([2]).is_deterministic()

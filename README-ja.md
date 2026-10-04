@@ -352,6 +352,8 @@ assert F(Id(x)) == FXTensor.identity_tensor([2])
 | `conditionalization` | 同時状態 → 核 | 同時分布を条件付きに割る（状態専用） |
 | `partial_composition` | 一部のワイヤーだけ合成 | 出力の接頭は残し、接尾だけ次の核へつなぐ |
 | `jointification` | 2つの状態の同時化 | 独立な2つの状態から同時状態を作る（状態専用） |
+| `conditional` | 核 `A → X ⊗ Y` → `A ⊗ X → Y` | domain 付きの核を条件付きに割る（`conditionalization` の一般化） |
+| `bayesian_inversion` | `f: X → Y` と事前分布 `I → X` → `f†: Y → X` | ベイズ更新・事後分布の核を作る |
 | `exclamation` | 破棄射 `X → I` | すべて1の破棄テンソルを作る |
 | `copy_tensor` | 複製射 `X → X^{⊗ n}` | 決定性のコピー / 対角（`n=0` は破棄） |
 | `delta_tensor` | 恒等（`identity_tensor` の別名） | 恒等核を作る |
@@ -438,9 +440,35 @@ assert joint_xy.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
 assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 ```
 
+#### `bayesian_inversion` — 事後分布の核
+
+事前分布 `p: I → X` と核 `f: X → Y` に対し、`f.bayesian_inversion(p)` は `f†(x|y) = p(x) f(y|x) / Σ p(x') f(y|x')` となる `f†: Y → X` を返します（Cho & Jacobs）。`p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)` を満たします。証拠が0の出力はゼロのままです。
+
+```python
+health = ['Sick', 'Healthy']
+result = ['Positive', 'Negative']
+prior = FXTensor([[], [health]], data=np.array([0.01, 0.99]))
+test = FXTensor([[health], [result]], data=np.array([[0.9, 0.1], [0.05, 0.95]]))
+posterior = test.bayesian_inversion(prior)
+assert posterior.labels == ([result], [health])
+assert np.isclose(posterior.data[0, 0], 2 / 13)  # P(Sick | Positive)
+```
+
+#### `conditional` — 核の条件付け
+
+`f.conditional(k)` は `f: A → X ⊗ Y` を `A ⊗ X → Y` にします。`k`（1始まり）は `Y` の最初の codomain 軸です。状態に対しては `conditionalization(k)` と一致します。
+
+```python
+f = FXTensor([[['a']], [['x0', 'x1'], ['y0', 'y1']]], data=np.array([[[0.1, 0.3], [0.2, 0.4]]]))
+c = f.conditional(2)
+assert c.labels == ([['a'], ['x0', 'x1']], [['y0', 'y1']])
+assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
+```
+
 ### 確率的性質
 
 - `is_markov()`: 出力の合計が1（または0）か検証。状態（domain が空）は常に `False` を返します。状態の正規化は `np.isclose(state.data.sum(), 1)` で確認してください。
+- `is_deterministic()`: すべての codomain スライスが点質量（one-hot）なら True。`f ; copy = copy ; (f ⊗ f)` と同値。ゼロのスライスは決定的とみなしません。
 - ラベル付きテンソルでは、`get_label_index` と `get_index_label` で確率分布の意味を直感的に解釈可能。
 
 ## テスト
@@ -454,3 +482,5 @@ pytest
 ## 参考文献
 - [1] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏 A First Look -- 圏論的確率論の最良の定式化](https://m-hiyama.hatenablog.com/entry/2020/06/09/154044)
 - [2] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)
+- [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
+- [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
