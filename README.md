@@ -352,6 +352,8 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 | `conditionalization` | Joint state → kernel | Split a joint distribution into a conditional (states only) |
 | `partial_composition` | Compose only some output wires | Keep a prefix of the outputs and feed the suffix into another kernel |
 | `jointification` | Joint of two states | Combine two independent states (states only) |
+| `conditional` | Kernel `A → X ⊗ Y` → `A ⊗ X → Y` | Conditionalize a kernel (generalizes `conditionalization`) |
+| `bayesian_inversion` | `f: X → Y` and prior `I → X` → `f†: Y → X` | Bayesian update / posterior kernel |
 | `exclamation` | Discard morphism `X → I` | Build an all-ones discarding tensor |
 | `copy_tensor` | Copy morphism `X → X^{⊗ n}` | Deterministic copy / diagonal (`n=0` is discard) |
 | `delta_tensor` | Identity (alias of `identity_tensor`) | Build an identity kernel |
@@ -438,9 +440,35 @@ assert joint_xy.labels == (None, [['a', 'b'], ['x', 'y', 'z']])
 assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 ```
 
+#### `bayesian_inversion` — posterior kernel
+
+For a prior `p: I → X` and a kernel `f: X → Y`, `f.bayesian_inversion(p)` returns `f†: Y → X` with `f†(x|y) = p(x) f(y|x) / Σ p(x') f(y|x')` (Cho & Jacobs). It satisfies `p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)`. Outputs with zero evidence stay zero.
+
+```python
+health = ['Sick', 'Healthy']
+result = ['Positive', 'Negative']
+prior = FXTensor([[], [health]], data=np.array([0.01, 0.99]))
+test = FXTensor([[health], [result]], data=np.array([[0.9, 0.1], [0.05, 0.95]]))
+posterior = test.bayesian_inversion(prior)
+assert posterior.labels == ([result], [health])
+assert np.isclose(posterior.data[0, 0], 2 / 13)  # P(Sick | Positive)
+```
+
+#### `conditional` — conditionalize a kernel
+
+`f.conditional(k)` turns `f: A → X ⊗ Y` into `A ⊗ X → Y`, where `k` (1-based) is the first codomain axis of `Y`. On a state it equals `conditionalization(k)`.
+
+```python
+f = FXTensor([[['a']], [['x0', 'x1'], ['y0', 'y1']]], data=np.array([[[0.1, 0.3], [0.2, 0.4]]]))
+c = f.conditional(2)
+assert c.labels == ([['a'], ['x0', 'x1']], [['y0', 'y1']])
+assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
+```
+
 ### Probabilistic Properties
 
-- `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0).
+- `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0). States (empty domain) always return `False`; check `np.isclose(state.data.sum(), 1)` for a normalized state.
+- `is_deterministic()`: True if every codomain slice is a point mass (one-hot), i.e. `f ; copy = copy ; (f ⊗ f)`. Zero slices are not deterministic.
 - Labeled tensors enable intuitive interpretation via `get_label_index` and `get_index_label`.
 
 ## Testing
@@ -454,3 +482,5 @@ pytest
 ## References
 - [1] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏 A First Look -- 圏論的確率論の最良の定式化](https://m-hiyama.hatenablog.com/entry/2020/06/09/154044)
 - [2] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)
+- [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
+- [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
