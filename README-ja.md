@@ -354,6 +354,8 @@ assert F(Id(x)) == FXTensor.identity_tensor([2])
 | `jointification` | 2つの状態の同時化 | 独立な2つの状態から同時状態を作る（状態専用） |
 | `conditional` | 核 `A → X ⊗ Y` → `A ⊗ X → Y` | domain 付きの核を条件付きに割る（`conditionalization` の一般化） |
 | `bayesian_inversion` | `f: X → Y` と事前分布 `I → X` → `f†: Y → X` | ベイズ更新・事後分布の核を作る |
+| `almost_surely_equal` | `f = g`（p-ほとんど確実に） | 事前分布が質量を持つ点だけで核を比較する |
+| `is_absolutely_continuous` | `p ≪ q` | 状態・核の台の包含を確認する |
 | `exclamation` | 破棄射 `X → I` | すべて1の破棄テンソルを作る |
 | `copy_tensor` | 複製射 `X → X^{⊗ n}` | 決定性のコピー / 対角（`n=0` は破棄） |
 | `delta_tensor` | 恒等（`identity_tensor` の別名） | 恒等核を作る |
@@ -465,6 +467,20 @@ assert c.labels == ([['a'], ['x0', 'x1']], [['y0', 'y1']])
 assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
 ```
 
+#### `support`・`almost_surely_equal`・`is_absolutely_continuous` — ほとんど確実な推論
+
+`support()` は非ゼロ成分の 0/1 指示テンソルを返します（profile とラベルはそのまま）。`f.almost_surely_equal(g, p)` は Fritz の `p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)`、つまり `p` の台の上で `f` と `g` が一致するかを判定します。`p.is_absolutely_continuous(q)` は `p ≪ q`（`q` が0なら `p` も0。核では入力ごと。arXiv:2308.00651 参照）を判定します。ゼロ判定は `_ATOL` を使い、ラベルは比較しません。
+
+```python
+prior = FXTensor([[], [['x0', 'x1', 'x2']]], data=np.array([0.4, 0.6, 0.0]))
+f = FXTensor([[['x0', 'x1', 'x2']], [['y0', 'y1']]], data=np.array([[0.2, 0.8], [0.5, 0.5], [1.0, 0.0]]))
+g = FXTensor([[['x0', 'x1', 'x2']], [['y0', 'y1']]], data=np.array([[0.2, 0.8], [0.5, 0.5], [0.3, 0.7]]))
+assert np.array_equal(prior.support().data, [1.0, 1.0, 0.0])
+assert f.almost_surely_equal(g, prior)   # f と g は確率0の点 x2 でのみ異なる
+assert f.is_absolutely_continuous(g)     # すべての x で f(·|x) ≪ g(·|x)
+assert not g.is_absolutely_continuous(f)
+```
+
 ### 確率的性質
 
 - `is_markov()`: 出力の合計が1（または0）か検証。状態（domain が空）は常に `False` を返します。状態の正規化は `np.isclose(state.data.sum(), 1)` で確認してください。
@@ -484,3 +500,4 @@ pytest
 - [2] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)
 - [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
 - [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
+- [5] [T. Fritz, T. Gonda, A. Lorenzin, P. Perrone, D. Stein, Absolute continuity, supports and idempotent splitting in categorical probability (arXiv:2308.00651)](https://arxiv.org/abs/2308.00651)

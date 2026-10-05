@@ -152,6 +152,56 @@ class OperationsMixin:
         one = np.isclose(rows, 1, rtol=rtol, atol=atol)
         return bool(np.all(zero | one) and np.all(one.sum(axis=1) == 1))
 
+    def support(self) -> 'FXTensor':
+        """Indicator tensor of the nonzero entries (same profile and labels).
+
+        For a state ``p: I → X`` this is the support ``{x : p(x) > 0}``; for a
+        kernel ``f: A → X`` it is the support relation ``{(a, x) : f(x|a) > 0}``.
+        Entries within ``_ATOL`` of zero count as zero.
+        """
+        rtol = type(self)._RTOL
+        atol = type(self)._ATOL
+        mask = ~np.isclose(self.data, 0, rtol=rtol, atol=atol)
+        return self._spawn(self._profile[0], self._profile[1], self._labels, mask.astype(float))
+
+    def almost_surely_equal(self, other: 'FXTensor', prior: 'FXTensor') -> bool:
+        """Check ``self = other`` ``prior``-almost surely.
+
+        For ``f, g: X → Y`` and a state ``p: I → X`` this is Fritz's
+        ``p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)``; for finite tensors it
+        means ``f(·|x) = g(·|x)`` for every ``x`` with ``p(x) > 0``. Only
+        profiles are compared, not labels.
+        """
+        if self._profile != other._profile:
+            raise ValueError("Tensors must have the same profile")
+        if prior._profile[0]:
+            raise ValueError("prior must be a state (empty domain)")
+        if prior._profile[1] != self._profile[0]:
+            raise ValueError("prior codomain must match the domain of self")
+        weights = prior.data.reshape(self._profile[0] + [1] * len(self._profile[1]))
+        return bool(np.allclose(
+            weights * self.data,
+            weights * other.data,
+            rtol=type(self)._RTOL,
+            atol=type(self)._ATOL,
+        ))
+
+    def is_absolutely_continuous(self, other: 'FXTensor') -> bool:
+        """Check ``self ≪ other``: wherever ``other`` is zero, ``self`` is zero.
+
+        For states this is the usual absolute continuity of distributions;
+        for kernels ``f, g: A → X`` it holds input-wise, i.e. ``f(·|a) ≪ g(·|a)``
+        for every ``a`` (finite case of Fritz et al., arXiv:2308.00651).
+        Only profiles are compared, not labels.
+        """
+        if self._profile != other._profile:
+            raise ValueError("Tensors must have the same profile")
+        rtol = type(self)._RTOL
+        atol = type(self)._ATOL
+        other_zero = np.isclose(other.data, 0, rtol=rtol, atol=atol)
+        self_zero = np.isclose(self.data, 0, rtol=rtol, atol=atol)
+        return bool(np.all(self_zero | ~other_zero))
+
     def marginalization(self, start_B: int) -> 'FXTensor':
         """Marginalize out a part of the codomain by summing over it."""
         domain_len = len(self._profile[0])
