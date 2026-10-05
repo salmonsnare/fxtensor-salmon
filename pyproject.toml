@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fxtensor_salmon"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name="Tadachika Oki", email="sakesnare@gmail.com" }, 
 ]

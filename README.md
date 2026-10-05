@@ -354,6 +354,8 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 | `jointification` | Joint of two states | Combine two independent states (states only) |
 | `conditional` | Kernel `A → X ⊗ Y` → `A ⊗ X → Y` | Conditionalize a kernel (generalizes `conditionalization`) |
 | `bayesian_inversion` | `f: X → Y` and prior `I → X` → `f†: Y → X` | Bayesian update / posterior kernel |
+| `almost_surely_equal` | `f = g` p-a.s. | Compare kernels only where the prior has mass |
+| `is_absolutely_continuous` | `p ≪ q` | Check support inclusion of states / kernels |
 | `exclamation` | Discard morphism `X → I` | Build an all-ones discarding tensor |
 | `copy_tensor` | Copy morphism `X → X^{⊗ n}` | Deterministic copy / diagonal (`n=0` is discard) |
 | `delta_tensor` | Identity (alias of `identity_tensor`) | Build an identity kernel |
@@ -465,6 +467,20 @@ assert c.labels == ([['a'], ['x0', 'x1']], [['y0', 'y1']])
 assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
 ```
 
+#### `support`, `almost_surely_equal`, `is_absolutely_continuous` — a.s. reasoning
+
+`support()` returns the 0/1 indicator of nonzero entries (same profile and labels). `f.almost_surely_equal(g, p)` checks Fritz's `p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)`, i.e. `f` and `g` agree on the support of `p`. `p.is_absolutely_continuous(q)` checks `p ≪ q` (zero in `q` implies zero in `p`; input-wise for kernels, cf. arXiv:2308.00651). Zero is judged with `_ATOL`; labels are not compared.
+
+```python
+prior = FXTensor([[], [['x0', 'x1', 'x2']]], data=np.array([0.4, 0.6, 0.0]))
+f = FXTensor([[['x0', 'x1', 'x2']], [['y0', 'y1']]], data=np.array([[0.2, 0.8], [0.5, 0.5], [1.0, 0.0]]))
+g = FXTensor([[['x0', 'x1', 'x2']], [['y0', 'y1']]], data=np.array([[0.2, 0.8], [0.5, 0.5], [0.3, 0.7]]))
+assert np.array_equal(prior.support().data, [1.0, 1.0, 0.0])
+assert f.almost_surely_equal(g, prior)   # f and g differ only on the null point x2
+assert f.is_absolutely_continuous(g)     # f(·|x) ≪ g(·|x) for every x
+assert not g.is_absolutely_continuous(f)
+```
+
 ### Probabilistic Properties
 
 - `is_markov()`: Verifies if the tensor satisfies the normalization condition (sum of outputs equals 1 or 0). States (empty domain) always return `False`; check `np.isclose(state.data.sum(), 1)` for a normalized state.
@@ -484,3 +500,4 @@ pytest
 - [2] [檜山正幸のキマイラ飼育記 (はてなBlog), マルコフ圏におけるテンソル計算の手順とコツ](https://m-hiyama.hatenablog.com/entry/2021/04/05/153325)
 - [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
 - [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
+- [5] [T. Fritz, T. Gonda, A. Lorenzin, P. Perrone, D. Stein, Absolute continuity, supports and idempotent splitting in categorical probability (arXiv:2308.00651)](https://arxiv.org/abs/2308.00651)
