@@ -342,6 +342,22 @@ assert F(Id(x)) == FXTensor.identity_tensor([2])
 - **対象**: 状態空間。`FXTensor` では、`profile` の `domain` や `codomain`（例: `[['市街地', '田舎']]` や `[[2]]`）で表現。
 - **射**: マルコフ核（確率的な遷移）。`FXTensor` のインスタンスは、プロファイルとデータで射を表現。
 
+### ストリング図
+
+図は上から下へ読みます（入力が上、出力が下）。描き方は T. Fritz（arXiv:1908.07021）の図を参考にした独自の TikZ 実装です。箱は射、三角形は状態 `I → X`、黒丸から下へ2本に分かれるのが `copy`、黒丸で終わる紐が discard `!` です。ソースは [`docs/diagrams/`](docs/diagrams/) にあります。
+
+copy は余結合的・余単位的・余可換です:
+
+<img src="docs/diagrams/copy_associativity.svg" alt="余結合律">
+
+<img src="docs/diagrams/copy_counitality.svg" alt="余単位律">
+
+<img src="docs/diagrams/copy_commutativity.svg" alt="余可換律">
+
+すべての射はマルコフ的（discard が自然）で `f ; ! = !` が成り立ちます。`FXTensor` では核の各行の和が 1 であることに対応します:
+
+<img src="docs/diagrams/discard_naturality.svg" alt="f ; ! = !">
+
 ### マルコフ圏の操作
 
 | メソッド | 役割 | いつ使うか |
@@ -369,7 +385,11 @@ result = tensor1.composition(tensor2)
 assert np.allclose(result.data, [[0.78, 0.22], [0.54, 0.46]])
 ```
 
+<img src="docs/diagrams/composition.svg" alt="f ; g">
+
 #### `tensor_product` — 独立な系の並列
+
+<img src="docs/diagrams/tensor_product.svg" alt="f ⊗ g">
 
 2つの射（または2つの状態）を結合せずに並べるときに使います。
 
@@ -444,6 +464,8 @@ assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 
 #### `bayesian_inversion` — 事後分布の核
 
+<img src="docs/diagrams/bayesian_inversion.svg" alt="p;copy;(id⊗f) = p;f;copy;(f†⊗id)">
+
 事前分布 `p: I → X` と核 `f: X → Y` に対し、`f.bayesian_inversion(p)` は `f†(x|y) = p(x) f(y|x) / Σ p(x') f(y|x')` となる `f†: Y → X` を返します（Cho & Jacobs）。`p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)` を満たします。証拠が0の出力はゼロのままです。
 
 ```python
@@ -468,6 +490,8 @@ assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
 ```
 
 #### `support`・`almost_surely_equal`・`is_absolutely_continuous` — ほとんど確実な推論
+
+<img src="docs/diagrams/almost_surely_equal.svg" alt="p;copy;(id⊗f) = p;copy;(id⊗g)">
 
 `support()` は非ゼロ成分の 0/1 指示テンソルを返します（profile とラベルはそのまま）。`f.almost_surely_equal(g, p)` は Fritz の `p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)`、つまり `p` の台の上で `f` と `g` が一致するかを判定します。`p.is_absolutely_continuous(q)` は `p ≪ q`（`q` が0なら `p` も0。核では入力ごと。arXiv:2308.00651 参照）を判定します。ゼロ判定は `_ATOL` を使い、ラベルは比較しません。
 

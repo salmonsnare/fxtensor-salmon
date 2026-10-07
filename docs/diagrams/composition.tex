@@ -1,0 +1,10 @@
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}
+% f ; g  (sequential composition, read top to bottom)
+\node[morphism] (f) at (0,1.2) {$f$}; \node[morphism] (g) at (0,-1.2) {$g$};
+\draw (0,2.6) node[wl,above]{$X$} -- (f); \draw (f) -- node[wl,right]{$Y$} (g);
+\draw (g) -- (0,-2.6) node[wl,below]{$Z$};
+\end{tikzpicture}
+\end{document}

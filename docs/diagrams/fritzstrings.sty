@@ -1,0 +1,25 @@
+% Shared TikZ styles for FXTensor string diagrams (read top to bottom).
+% Original implementation, drawing conventions referenced from
+% T. Fritz (arXiv:1908.07021).
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{fritzstrings}
+\RequirePackage{tikz}
+\usetikzlibrary{shapes.geometric,backgrounds}
+\tikzset{
+  every picture/.append style={x=0.5cm, y=0.5cm, line width=0.6pt,
+    show background rectangle,
+    background rectangle/.style={fill=white, draw=none},
+    inner frame sep=6pt},
+  % kernel f : X -> Y
+  morphism/.style={draw, fill=white, rectangle, minimum width=7mm, minimum height=5.5mm, inner sep=2pt},
+  % copy / discard dot
+  bn/.style={draw, fill=black, circle, inner sep=1.5pt},
+  % state I -> X: triangle with apex up, output wire leaves the flat bottom side
+  state/.style={draw, fill=white, isosceles triangle, isosceles triangle apex angle=64,
+    shape border rotate=90, minimum height=6mm, inner sep=0.5pt},
+  wl/.style={font=\scriptsize, inner sep=1.5pt},
+  eq/.style={font=\normalsize},
+}
+% \copyto{dot}{left end}{right end}: copy dot branching downwards
+\newcommand{\copyto}[3]{\draw (#1) to[out=180,in=90] (#2); \draw (#1) to[out=0,in=90] (#3);}
+\endinput

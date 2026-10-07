@@ -1,0 +1,10 @@
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}
+% f (x) g  (parallel composition)
+\node[morphism] (f) at (-1,-0) {$f$}; \node[morphism] (g) at (1,-0) {$g$};
+\draw (-1,1.6) node[wl,above]{$X$} -- (f) -- (-1,-1.6) node[wl,below]{$Y$};
+\draw (1,1.6) node[wl,above]{$Z$} -- (g) -- (1,-1.6) node[wl,below]{$W$};
+\end{tikzpicture}
+\end{document}
