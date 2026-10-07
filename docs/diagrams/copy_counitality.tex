@@ -1,0 +1,14 @@
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}
+% (copy ; (del (x) id)) = id = (copy ; (id (x) del))
+\node[bn] (a) at (-4,-0.5) {}; \draw (-4,-2) node[wl,below]{$X$} -- (a);
+\node[bn] (ad) at (-5,1) {}; \copyto{a}{ad}{-3,2} \node[wl,above] at (-3,2){$X$};
+\node[eq] at (-1.5,0) {$=$};
+\draw (0,-2) node[wl,below]{$X$} -- (0,2) node[wl,above]{$X$};
+\node[eq] at (1.5,0) {$=$};
+\node[bn] (b) at (4,-0.5) {}; \draw (4,-2) node[wl,below]{$X$} -- (b);
+\node[bn] (bd) at (5,1) {}; \copyto{b}{3,2}{bd} \node[wl,above] at (3,2){$X$};
+\end{tikzpicture}
+\end{document}

@@ -342,6 +342,22 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 - **Objects**: State spaces, represented in `FXTensor` as `domain` or `codomain` (e.g., `[['Urban', 'Rural']]` or `[[2]]`).
 - **Morphisms**: Markov kernels (probabilistic transitions), represented by `FXTensor` instances with profile and data.
 
+### String diagrams
+
+Diagrams are read bottom to top, in the style of Fritz (arXiv:1908.07021): boxes are morphisms, triangles are states `I → X`, a black dot with two branches is `copy`, and a wire ending in a black dot is discard `!`. Sources are in [`docs/diagrams/`](docs/diagrams/).
+
+Copy is coassociative, counital and cocommutative:
+
+<img src="docs/diagrams/copy_associativity.svg" alt="coassociativity">
+
+<img src="docs/diagrams/copy_counitality.svg" alt="counitality">
+
+<img src="docs/diagrams/copy_commutativity.svg" alt="cocommutativity">
+
+Every morphism is Markov (discard is natural), `f ; ! = !` — in `FXTensor`, each row of a kernel sums to 1:
+
+<img src="docs/diagrams/discard_naturality.svg" alt="f ; ! = !">
+
 ### Markov Category Operations
 
 | Method | Role | When to use |
@@ -369,7 +385,11 @@ result = tensor1.composition(tensor2)
 assert np.allclose(result.data, [[0.78, 0.22], [0.54, 0.46]])
 ```
 
+<img src="docs/diagrams/composition.svg" alt="f ; g">
+
 #### `tensor_product` — independent systems in parallel
+
+<img src="docs/diagrams/tensor_product.svg" alt="f ⊗ g">
 
 Use to put two morphisms (or two states) next to each other without coupling.
 
@@ -444,6 +464,8 @@ assert np.allclose(joint_xy.data, [[0.06, 0.09, 0.15], [0.14, 0.21, 0.35]])
 
 #### `bayesian_inversion` — posterior kernel
 
+<img src="docs/diagrams/bayesian_inversion.svg" alt="p;copy;(id⊗f) = p;f;copy;(f†⊗id)">
+
 For a prior `p: I → X` and a kernel `f: X → Y`, `f.bayesian_inversion(p)` returns `f†: Y → X` with `f†(x|y) = p(x) f(y|x) / Σ p(x') f(y|x')` (Cho & Jacobs). It satisfies `p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)`. Outputs with zero evidence stay zero.
 
 ```python
@@ -468,6 +490,8 @@ assert np.allclose(c.data, [[[0.25, 0.75], [1/3, 2/3]]])
 ```
 
 #### `support`, `almost_surely_equal`, `is_absolutely_continuous` — a.s. reasoning
+
+<img src="docs/diagrams/almost_surely_equal.svg" alt="p;copy;(id⊗f) = p;copy;(id⊗g)">
 
 `support()` returns the 0/1 indicator of nonzero entries (same profile and labels). `f.almost_surely_equal(g, p)` checks Fritz's `p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)`, i.e. `f` and `g` agree on the support of `p`. `p.is_absolutely_continuous(q)` checks `p ≪ q` (zero in `q` implies zero in `p`; input-wise for kernels, cf. arXiv:2308.00651). Zero is judged with `_ATOL`; labels are not compared.
 

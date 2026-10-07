@@ -1,0 +1,18 @@
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}
+% p ; copy ; (id (x) f)  =  p ; f ; copy ; (f^dagger (x) id)
+\node[state] (p) at (-3,-1.6) {$p$}; \node[bn] (c) at (-3,-0.3) {};
+\draw (p) -- node[wl,right]{$X$} (c);
+\node[morphism] (f) at (-2,1) {$f$};
+\copyto{c}{-4,2.4}{f}
+\draw (f) -- (-2,2.4) node[wl,above]{$Y$}; \node[wl,above] at (-4,2.4){$X$};
+\node[eq] at (0,0) {$=$};
+\node[state] (q) at (3,-3.6) {$p$}; \node[morphism] (g) at (3,-1.8) {$f$};
+\node[bn] (d) at (3,0) {}; \node[morphism] (fd) at (2,1.2) {$f^\dagger$};
+\draw (q) -- node[wl,right]{$X$} (g); \draw (g) -- node[wl,right]{$Y$} (d);
+\copyto{d}{fd}{4,2.4}
+\draw (fd) -- (2,2.4) node[wl,above]{$X$}; \node[wl,above] at (4,2.4){$Y$};
+\end{tikzpicture}
+\end{document}
