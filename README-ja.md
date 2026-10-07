@@ -344,7 +344,7 @@ assert F(Id(x)) == FXTensor.identity_tensor([2])
 
 ### ストリング図
 
-図は Fritz（arXiv:1908.07021）の流儀で下から上へ読みます。箱は射、三角形は状態 `I → X`、黒丸から2本に分かれるのが `copy`、黒丸で終わる紐が discard `!` です。ソースは [`docs/diagrams/`](docs/diagrams/) にあります。
+図は上から下へ読みます（入力が上、出力が下）。描き方は T. Fritz（arXiv:1908.07021）の図を参考にした独自の TikZ 実装です。箱は射、三角形は状態 `I → X`、黒丸から下へ2本に分かれるのが `copy`、黒丸で終わる紐が discard `!` です。ソースは [`docs/diagrams/`](docs/diagrams/) にあります。
 
 copy は余結合的・余単位的・余可換です:
 

@@ -344,7 +344,7 @@ The `fxtensor-salmon` library is designed based on the **Markov Category**, a fr
 
 ### String diagrams
 
-Diagrams are read bottom to top, in the style of Fritz (arXiv:1908.07021): boxes are morphisms, triangles are states `I → X`, a black dot with two branches is `copy`, and a wire ending in a black dot is discard `!`. Sources are in [`docs/diagrams/`](docs/diagrams/).
+Diagrams are read top to bottom (inputs at the top, outputs at the bottom). The drawing conventions are referenced from T. Fritz (arXiv:1908.07021), implemented independently in TikZ. Boxes are morphisms, triangles are states `I → X`, a black dot branching downwards is `copy`, and a wire ending in a black dot is discard `!`. Sources are in [`docs/diagrams/`](docs/diagrams/).
 
 Copy is coassociative, counital and cocommutative:
 

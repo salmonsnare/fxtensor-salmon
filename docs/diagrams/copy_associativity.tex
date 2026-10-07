@@ -3,16 +3,16 @@
 \begin{document}
 \begin{tikzpicture}
 % (copy ; (copy (x) id)) = (copy ; (id (x) copy))
-\node[bn] (a) at (-3,-1) {}; \node[bn] (b) at (-4,0.6) {};
-\draw (-3,-2.2) node[wl,below]{$X$} -- (a);
-\copyto{a}{-4,0}{-2,2.2} \draw (-4,0) -- (b);
-\copyto{b}{-5,2.2}{-3,2.2}
-\node[wl,above] at (-5,2.2){$X$}; \node[wl,above] at (-3,2.2){$X$}; \node[wl,above] at (-2,2.2){$X$};
-\node[eq] at (0,0) {$=$};
-\node[bn] (c) at (3,-1) {}; \node[bn] (d) at (4,0.6) {};
-\draw (3,-2.2) node[wl,below]{$X$} -- (c);
-\copyto{c}{2,2.2}{4,0} \draw (4,0) -- (d);
-\copyto{d}{3,2.2}{5,2.2}
-\node[wl,above] at (2,2.2){$X$}; \node[wl,above] at (3,2.2){$X$}; \node[wl,above] at (5,2.2){$X$};
+\node[bn] (a) at (-3,1) {}; \node[bn] (b) at (-4,-0.6) {};
+\draw (-3,2.2) node[wl,above]{$X$} -- (a);
+\copyto{a}{-4,-0}{-2,-2.2} \draw (-4,-0) -- (b);
+\copyto{b}{-5,-2.2}{-3,-2.2}
+\node[wl,below] at (-5,-2.2){$X$}; \node[wl,below] at (-3,-2.2){$X$}; \node[wl,below] at (-2,-2.2){$X$};
+\node[eq] at (0,-0) {$=$};
+\node[bn] (c) at (3,1) {}; \node[bn] (d) at (4,-0.6) {};
+\draw (3,2.2) node[wl,above]{$X$} -- (c);
+\copyto{c}{2,-2.2}{4,-0} \draw (4,-0) -- (d);
+\copyto{d}{3,-2.2}{5,-2.2}
+\node[wl,below] at (2,-2.2){$X$}; \node[wl,below] at (3,-2.2){$X$}; \node[wl,below] at (5,-2.2){$X$};
 \end{tikzpicture}
 \end{document}

@@ -3,13 +3,13 @@
 \begin{document}
 \begin{tikzpicture}
 % (copy ; swap) = copy
-\node[bn] (a) at (-2.5,-1) {}; \draw (-2.5,-2.2) node[wl,below]{$X$} -- (a);
-\copyto{a}{-3.5,0}{-1.5,0}
-\draw (-3.5,0) to[out=90,in=-90] (-1.5,2.2); \draw (-1.5,0) to[out=90,in=-90] (-3.5,2.2);
-\node[wl,above] at (-3.5,2.2){$X$}; \node[wl,above] at (-1.5,2.2){$X$};
-\node[eq] at (0,0) {$=$};
-\node[bn] (b) at (2.5,-1) {}; \draw (2.5,-2.2) node[wl,below]{$X$} -- (b);
-\copyto{b}{1.5,2.2}{3.5,2.2}
-\node[wl,above] at (1.5,2.2){$X$}; \node[wl,above] at (3.5,2.2){$X$};
+\node[bn] (a) at (-2.5,1) {}; \draw (-2.5,2.2) node[wl,above]{$X$} -- (a);
+\copyto{a}{-3.5,-0}{-1.5,-0}
+\draw (-3.5,-0) to[out=-90,in=90] (-1.5,-2.2); \draw (-1.5,-0) to[out=-90,in=90] (-3.5,-2.2);
+\node[wl,below] at (-3.5,-2.2){$X$}; \node[wl,below] at (-1.5,-2.2){$X$};
+\node[eq] at (0,-0) {$=$};
+\node[bn] (b) at (2.5,1) {}; \draw (2.5,2.2) node[wl,above]{$X$} -- (b);
+\copyto{b}{1.5,-2.2}{3.5,-2.2}
+\node[wl,below] at (1.5,-2.2){$X$}; \node[wl,below] at (3.5,-2.2){$X$};
 \end{tikzpicture}
 \end{document}

@@ -3,16 +3,16 @@
 \begin{document}
 \begin{tikzpicture}
 % f =_p g  :<=>  p ; copy ; (id (x) f) = p ; copy ; (id (x) g)
-\node[state] (p) at (-3,-1.6) {$p$}; \node[bn] (c) at (-3,-0.3) {};
+\node[state] (p) at (-3,1.6) {$p$}; \node[bn] (c) at (-3,0.3) {};
 \draw (p) -- node[wl,right]{$X$} (c);
-\node[morphism] (f) at (-2,1) {$f$};
-\copyto{c}{-4,2.4}{f}
-\draw (f) -- (-2,2.4) node[wl,above]{$Y$}; \node[wl,above] at (-4,2.4){$X$};
-\node[eq] at (0,0) {$=$};
-\node[state] (q) at (3,-1.6) {$p$}; \node[bn] (d) at (3,-0.3) {};
+\node[morphism] (f) at (-2,-1) {$f$};
+\copyto{c}{-4,-2.4}{f}
+\draw (f) -- (-2,-2.4) node[wl,below]{$Y$}; \node[wl,below] at (-4,-2.4){$X$};
+\node[eq] at (0,-0) {$=$};
+\node[state] (q) at (3,1.6) {$p$}; \node[bn] (d) at (3,0.3) {};
 \draw (q) -- node[wl,right]{$X$} (d);
-\node[morphism] (g) at (4,1) {$g$};
-\copyto{d}{2,2.4}{g}
-\draw (g) -- (4,2.4) node[wl,above]{$Y$}; \node[wl,above] at (2,2.4){$X$};
+\node[morphism] (g) at (4,-1) {$g$};
+\copyto{d}{2,-2.4}{g}
+\draw (g) -- (4,-2.4) node[wl,below]{$Y$}; \node[wl,below] at (2,-2.4){$X$};
 \end{tikzpicture}
 \end{document}

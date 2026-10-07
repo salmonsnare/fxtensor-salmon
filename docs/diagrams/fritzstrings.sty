@@ -1,25 +1,25 @@
-% Shared TikZ styles for FXTensor string diagrams.
-% Modelled on T. Fritz, "A synthetic approach to Markov kernels, conditional
-% independence and theorems on sufficient statistics" (arXiv:1908.07021),
-% whose figures use comonoids.tikzstyles: white rectangular morphism boxes,
-% black dots (bn) for copy/discard, downward-pointing triangles for states,
-% diagrams read bottom-to-top, scale 0.5.
+% Shared TikZ styles for FXTensor string diagrams (read top to bottom).
+% Original implementation, drawing conventions referenced from
+% T. Fritz (arXiv:1908.07021).
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{fritzstrings}
 \RequirePackage{tikz}
 \usetikzlibrary{shapes.geometric,backgrounds}
 \tikzset{
-  every picture/.append style={scale=0.5, line width=0.6pt,
+  every picture/.append style={x=0.5cm, y=0.5cm, line width=0.6pt,
     show background rectangle,
     background rectangle/.style={fill=white, draw=none},
     inner frame sep=6pt},
-  morphism/.style={fill=white, draw=black, shape=rectangle, minimum width=0.7cm, minimum height=0.55cm, inner sep=2pt},
-  bn/.style={fill=black, draw=black, shape=circle, inner sep=1.5pt},
-  state/.style={fill=white, draw=black, regular polygon, regular polygon sides=3,
-    minimum width=0.8cm, shape border rotate=180, inner sep=0pt},
-  wl/.style={font=\scriptsize, inner sep=1.5pt},   % wire label
+  % kernel f : X -> Y
+  morphism/.style={draw, fill=white, rectangle, minimum width=7mm, minimum height=5.5mm, inner sep=2pt},
+  % copy / discard dot
+  bn/.style={draw, fill=black, circle, inner sep=1.5pt},
+  % state I -> X: triangle with apex up, output wire leaves the flat bottom side
+  state/.style={draw, fill=white, isosceles triangle, isosceles triangle apex angle=64,
+    shape border rotate=90, minimum height=6mm, inner sep=0.5pt},
+  wl/.style={font=\scriptsize, inner sep=1.5pt},
   eq/.style={font=\normalsize},
 }
-% \copyat{node}{left end}{right end}: curved branches from a copy dot
-\newcommand{\copyto}[3]{\draw (#1) to[out=180,in=-90] (#2); \draw (#1) to[out=0,in=-90] (#3);}
+% \copyto{dot}{left end}{right end}: copy dot branching downwards
+\newcommand{\copyto}[3]{\draw (#1) to[out=180,in=90] (#2); \draw (#1) to[out=0,in=90] (#3);}
 \endinput

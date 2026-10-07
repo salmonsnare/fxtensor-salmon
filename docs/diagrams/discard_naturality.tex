@@ -3,9 +3,9 @@
 \begin{document}
 \begin{tikzpicture}
 % Markov property: f ; del_Y = del_X
-\node[morphism] (f) at (-1.5,0) {$f$}; \node[bn] (d) at (-1.5,1.6) {};
-\draw (-1.5,-1.8) node[wl,below]{$X$} -- (f); \draw (f) -- node[wl,right]{$Y$} (d);
-\node[eq] at (0,0) {$=$};
-\node[bn] (e) at (1.5,1.6) {}; \draw (1.5,-1.8) node[wl,below]{$X$} -- (e);
+\node[morphism] (f) at (-1.5,-0) {$f$}; \node[bn] (d) at (-1.5,-1.6) {};
+\draw (-1.5,1.8) node[wl,above]{$X$} -- (f); \draw (f) -- node[wl,right]{$Y$} (d);
+\node[eq] at (0,-0) {$=$};
+\node[bn] (e) at (1.5,-1.6) {}; \draw (1.5,1.8) node[wl,above]{$X$} -- (e);
 \end{tikzpicture}
 \end{document}

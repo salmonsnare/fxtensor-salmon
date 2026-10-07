@@ -1,6 +1,6 @@
 # String diagrams
 
-TikZ sources for the README figures. Shared styles: `fritzstrings.sty` (after Fritz, arXiv:1908.07021).
+TikZ sources for the README figures. Shared styles: `fritzstrings.sty` (original implementation, drawing conventions referenced from T. Fritz, arXiv:1908.07021). Diagrams read top to bottom.
 
 Regenerate (requires TeX Live with tikz/standalone and dvisvgm):
 
