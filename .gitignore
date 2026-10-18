@@ -16,6 +16,8 @@ build/
 .coverage
 htmlcov/
 
+docs/_build/
+
 .DS_Store
 Thumbs.db
 Agent.md
