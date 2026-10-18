@@ -1,0 +1,17 @@
+.announcement-content .language-switch {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.sidebar-language {
+  margin: 0.15rem 1.1rem 0.85rem;
+  font-size: 0.92rem;
+}
+
+.sidebar-language a {
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

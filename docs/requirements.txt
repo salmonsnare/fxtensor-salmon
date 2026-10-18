@@ -1,0 +1,7 @@
+# Third-party packages used to build the documentation.
+# From a checkout of this repository, on Python 3.10 or newer:
+#   pip install -e ".[docs]"
+# DisCoPy is required so autodoc can import fxtensor_salmon.discopy.
+sphinx>=7.4
+furo>=2024.8.6
+discopy>=1.2,<2

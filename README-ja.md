@@ -2,6 +2,11 @@
 
 FXTensorは、テンソルベースの計算を行うためのPythonライブラリであり、特に圏論に基づいた確率的なシステムやプロセスのモデル化に適しています。NumPyを活用して効率的な数値計算を実現しています。ラベル付きインデックスを主にサポートしつつ、ラベルなしの数値インデックスも扱える柔軟な設計が特徴です。
 
+## ドキュメント
+
+- [English](https://salmonsnare.github.io/fxtensor-salmon/en/)
+- [日本語](https://salmonsnare.github.io/fxtensor-salmon/ja/)
+
 ## 中核となる概念
 
 FXTensorのテンソルは、`profile`（次元情報）と`data`（値）によって定義されます。オプションとして、文字列ラベルを付与することで、テンソルをより直感的で可読性の高いものにできます。

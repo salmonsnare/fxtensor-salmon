@@ -33,9 +33,15 @@ dev = [
 discopy = [
     "discopy>=1.2,<2",
 ]
+docs = [
+    "sphinx>=7.4",
+    "furo>=2024.8.6",
+    "discopy>=1.2,<2; python_version>='3.10'",
+]
 
 [project.urls]
 Homepage = "https://github.com/salmonsnare/fxtensor-salmon"
+Documentation = "https://salmonsnare.github.io/fxtensor-salmon/"
 
 [tool.setuptools.packages.find]
 where = ["src"]

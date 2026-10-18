@@ -2,6 +2,11 @@
 
 FXTensor is a Python library for tensor-based computations, particularly suited for modeling probabilistic systems and processes inspired by category theory. It leverages NumPy for efficient numerical computations. The library primarily supports labeled indices for enhanced readability while maintaining compatibility with unlabeled numeric indices.
 
+## Documentation
+
+- [English](https://salmonsnare.github.io/fxtensor-salmon/en/)
+- [日本語](https://salmonsnare.github.io/fxtensor-salmon/ja/)
+
 ## Core Concepts
 
 An FXTensor is defined by its `profile` and `data`, with optional string labels to make tensors more intuitive and meaningful.
