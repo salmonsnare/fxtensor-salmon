@@ -21,6 +21,6 @@ jobs:
         if: matrix.python-version != '3.8'
         run: pip install -e ".[discopy]"
       - name: Ruff
-        run: ruff check src tests/test_fxtensor.py tests/test_discopy.py
+        run: ruff check src tests/test_fxtensor.py tests/test_discopy.py tests/test_independence.py
       - name: Tests
         run: pytest -q

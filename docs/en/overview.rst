@@ -32,7 +32,8 @@ joint distribution when the codomain has several factors.
      - :meth:`~fxtensor_salmon.FXTensor.copy_tensor` and :meth:`~fxtensor_salmon.FXTensor.exclamation`
 
 String diagrams in this documentation are read **top to bottom** (inputs at
-the top, outputs at the bottom). A box is a morphism, a triangle is a state,
+the top, outputs at the bottom). The conditional-independence figure is read
+**bottom to top**. A box is a morphism, a triangle is a state,
 a dot that branches downward is copy, and a wire that ends in a dot is
 discard. The figures follow the drawing conventions of Fritz,
 arXiv:1908.07021, and are drawn separately. TikZ sources live in

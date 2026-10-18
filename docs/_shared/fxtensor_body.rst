@@ -21,6 +21,9 @@
    FXTensor.jointification
    FXTensor.conditionalization
    FXTensor.conditional
+   FXTensor.is_conditionally_independent
+   FXTensor.is_independent
+   FXTensor.conditional_product
    FXTensor.bayesian_inversion
    FXTensor.support
    FXTensor.almost_surely_equal
@@ -45,3 +48,11 @@
    :undoc-members:
    :inherited-members:
    :member-order: bysource
+
+The conditional-independence methods are implemented in
+:mod:`fxtensor_salmon.independence` and mixed into ``FXTensor``.
+
+.. automodule:: fxtensor_salmon.independence
+   :members:
+   :show-inheritance:
+   :no-index:

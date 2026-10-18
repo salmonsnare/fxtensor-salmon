@@ -11,6 +11,7 @@
    concepts
    operations
    inference
+   independence
    structural
    io
    discopy

@@ -149,6 +149,33 @@ Model a weather system with states “Sunny” or “Rainy.”
   p_sunny = sunny_tomorrow.data[sunny_idx]  # 0.8
   ```
 
+### Conditional independence: weather, umbrella, and the forecast
+
+The forecast drives both the weather you meet and whether you carry an umbrella. Given the forecast they are conditionally independent. The marginal on weather and umbrella still couples them.
+
+The API orders the joint as weather ⊗ umbrella ⊗ forecast (`X ⊗ Y ⊗ Z`, with `Z` last). The figure draws the same variables as `X ⊗ Z ⊗ Y` and is read bottom to top. Left: `X ⊥ Y | Z` is the copy–discard equation. Right: `conditional_product` is `p_Z ; copy_Z ; (p(x|z) ⊗ id_Z ⊗ q(y|z))`. Bottom: when `Z` is trivial, the joint is the product of the marginals.
+
+<img src="https://raw.githubusercontent.com/salmonsnare/fxtensor-salmon/main/docs/_static/figures/conditional_independence.svg" alt="Conditional independence X ⊥ Y | Z and conditional_product">
+
+```python
+forecast = ['Sunny', 'Rainy']
+weather = ['Dry', 'Wet']
+umbrella = ['Leave', 'Take']
+p_wf = FXTensor([[], [weather, forecast]], data=np.array([
+    [0.45, 0.05],  # Dry
+    [0.05, 0.45],  # Wet
+]))
+p_uf = FXTensor([[], [umbrella, forecast]], data=np.array([
+    [0.40, 0.10],  # Leave
+    [0.10, 0.40],  # Take
+]))
+joint = FXTensor.conditional_product(p_wf, p_uf, 2)
+assert joint.labels == (None, [weather, umbrella, forecast])
+assert joint.is_conditionally_independent(2, 3)
+weather_umbrella = joint.marginalization(3)
+assert not weather_umbrella.is_independent(2)
+```
+
 ## Advanced Example: Multidimensional System (Labeled)
 
 Model **Season** (Spring, Summer, Other) and **Weather** (Sunny, Rainy) given **Location** (Urban, Rural).
@@ -374,6 +401,9 @@ Every morphism is Markov (discard is natural), `f ; ! = !` — in `FXTensor`, ea
 | `partial_composition` | Compose only some output wires | Keep a prefix of the outputs and feed the suffix into another kernel |
 | `jointification` | Joint of two states | Combine two independent states (states only) |
 | `conditional` | Kernel `A → X ⊗ Y` → `A ⊗ X → Y` | Conditionalize a kernel (generalizes `conditionalization`) |
+| `is_conditionally_independent` | `X ⊥ Y` given `Z`, codomain `X ⊗ Y ⊗ Z` | Test a state or kernel against the copy–discard equation |
+| `conditional_product` | Joint on `X ⊗ Y ⊗ Z` from joints on `X ⊗ Z` and `Y ⊗ Z` | Build a conditionally independent joint (states or kernels that share a domain) |
+| `is_independent` | `X ⊥ Y` when `Z` is empty | Special case of conditional independence |
 | `bayesian_inversion` | `f: X → Y` and prior `I → X` → `f†: Y → X` | Bayesian update / posterior kernel |
 | `almost_surely_equal` | `f = g` p-a.s. | Compare kernels only where the prior has mass |
 | `is_absolutely_continuous` | `p ≪ q` | Check support inclusion of states / kernels |

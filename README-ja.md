@@ -149,6 +149,33 @@ assert np.allclose(result.data, np.outer(
   p_sunny = sunny_tomorrow.data[sunny_idx]  # 0.8
   ```
 
+### 条件付き独立性：天気、傘、予報
+
+予報は、出かける先の天気と、傘を持っていくかどうかの両方を決めます。予報を条件にすれば、天気と傘は条件付き独立です。天気と傘だけの周辺では、両者はまだ連動します。
+
+API の同時分布の順は、天気 ⊗ 傘 ⊗ 予報（`X ⊗ Y ⊗ Z` で、`Z` が最後）です。図は同じ変数を `X ⊗ Z ⊗ Y` の順に描き、下から上に読みます。左は `X ⊥ Y | Z` の copy–discard 等式、右は `conditional_product` の構成 `p_Z ; copy_Z ; (p(x|z) ⊗ id_Z ⊗ q(y|z))`、下は `Z` が自明なときの周辺の積です。
+
+<img src="docs/_static/figures/conditional_independence.svg" alt="条件付き独立性 X ⊥ Y | Z と conditional_product">
+
+```python
+forecast = ['晴れ', '雨']
+weather = ['乾燥', '湿潤']
+umbrella = ['置いていく', '持っていく']
+p_wf = FXTensor([[], [weather, forecast]], data=np.array([
+    [0.45, 0.05],  # 乾燥
+    [0.05, 0.45],  # 湿潤
+]))
+p_uf = FXTensor([[], [umbrella, forecast]], data=np.array([
+    [0.40, 0.10],  # 置いていく
+    [0.10, 0.40],  # 持っていく
+]))
+joint = FXTensor.conditional_product(p_wf, p_uf, 2)
+assert joint.labels == (None, [weather, umbrella, forecast])
+assert joint.is_conditionally_independent(2, 3)
+weather_umbrella = joint.marginalization(3)
+assert not weather_umbrella.is_independent(2)
+```
+
 ## 発展的な例：多次元システム（ラベル付き）
 
 **場所**（市街地、田舎）を条件とする **季節**（春、夏、その他）と **天気**（晴れ、雨）をモデル化します。
@@ -374,6 +401,9 @@ copy は余結合的・余単位的・余可換です:
 | `partial_composition` | 一部のワイヤーだけ合成 | 出力の接頭は残し、接尾だけ次の核へつなぐ |
 | `jointification` | 2つの状態の同時化 | 独立な2つの状態から同時状態を作る（状態専用） |
 | `conditional` | 核 `A → X ⊗ Y` → `A ⊗ X → Y` | domain 付きの核を条件付きに割る（`conditionalization` の一般化） |
+| `is_conditionally_independent` | 余域 `X ⊗ Y ⊗ Z` で `Z` を与えた `X ⊥ Y` | 状態または核を copy–discard 等式で判定する |
+| `conditional_product` | `X ⊗ Z` と `Y ⊗ Z` の同時分布から `X ⊗ Y ⊗ Z` を作る | 条件付き独立な同時分布を作る（状態、または domain を共有する核） |
+| `is_independent` | `Z` が空のときの `X ⊥ Y` | 条件付き独立性の特別な場合 |
 | `bayesian_inversion` | `f: X → Y` と事前分布 `I → X` → `f†: Y → X` | ベイズ更新・事後分布の核を作る |
 | `almost_surely_equal` | `f = g`（p-ほとんど確実に） | 事前分布が質量を持つ点だけで核を比較する |
 | `is_absolutely_continuous` | `p ≪ q` | 状態・核の台の包含を確認する |
