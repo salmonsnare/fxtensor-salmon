@@ -18,3 +18,4 @@ domain と codomain を与え、必要なら文字列ラベルを付けます。
    quickstart
    guide/index
    api/index
+   contributing

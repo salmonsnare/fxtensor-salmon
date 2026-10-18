@@ -44,10 +44,12 @@ labeled, otherwise from the prior. The finite equation
 ``p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)`` holds for the tensors this
 method returns.
 
-.. figure:: ../../diagrams/bayesian_inversion.svg
+.. figure:: ../../_static/figures/bayesian_inversion.svg
    :alt: Bayesian inversion equation, read top to bottom
    :width: 220px
    :align: center
+
+   Bayesian inversion: ``p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)``.
 
 .. literalinclude:: ../../examples/inference.py
    :language: python
@@ -69,10 +71,12 @@ domain.
 ``self`` is zero everywhere ``other`` is zero. For kernels this is checked
 input by input. Profiles must match; labels are not compared.
 
-.. figure:: ../../diagrams/almost_surely_equal.svg
+.. figure:: ../../_static/figures/almost_surely_equal.svg
    :alt: Almost-sure equality of two kernels given a prior
    :width: 220px
    :align: center
+
+   Almost-sure equality: ``p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)``.
 
 .. literalinclude:: ../../examples/inference.py
    :language: python

@@ -40,25 +40,33 @@ copy の法則
 これらのテンソルの上で、copy は余可換・余結合・余単位的で、discard は自然です。
 つまり核 ``f`` に対して ``f ; ! = !`` です。決定的な核は copy と交換します。
 
-.. figure:: ../../diagrams/copy_associativity.svg
+.. figure:: ../../_static/figures/copy_associativity.svg
    :alt: copy の余結合律
    :width: 200px
    :align: center
 
-.. figure:: ../../diagrams/copy_counitality.svg
+   copy の余結合律。
+
+.. figure:: ../../_static/figures/copy_counitality.svg
    :alt: copy の余単位律
    :width: 200px
    :align: center
 
-.. figure:: ../../diagrams/copy_commutativity.svg
+   copy の余単位律。
+
+.. figure:: ../../_static/figures/copy_commutativity.svg
    :alt: copy の余可換律
    :width: 180px
    :align: center
 
-.. figure:: ../../diagrams/discard_naturality.svg
+   copy の余可換律。
+
+.. figure:: ../../_static/figures/discard_naturality.svg
    :alt: discard は自然で、f と discard の合成は discard に等しい
    :width: 180px
    :align: center
+
+   discard の自然性: ``f ; ! = !``。
 
 .. literalinclude:: ../../examples/structural.py
    :language: python

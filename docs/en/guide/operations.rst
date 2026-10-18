@@ -21,15 +21,19 @@ does not wipe the other tensor's labels.
    :start-after: # docs:example product-labels
    :end-before: # docs:end product-labels
 
-.. figure:: ../../diagrams/composition.svg
+.. figure:: ../../_static/figures/composition.svg
    :alt: Sequential composition, read top to bottom
    :width: 140px
    :align: center
 
-.. figure:: ../../diagrams/tensor_product.svg
+   Sequential composition, ``f ; g``.
+
+.. figure:: ../../_static/figures/tensor_product.svg
    :alt: Tensor product of two morphisms
    :width: 180px
    :align: center
+
+   Tensor product, ``f ⊗ g``.
 
 Marginalization
 ---------------

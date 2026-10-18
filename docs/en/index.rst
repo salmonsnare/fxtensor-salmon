@@ -19,3 +19,4 @@ and from the sidebar.
    quickstart
    guide/index
    api/index
+   contributing

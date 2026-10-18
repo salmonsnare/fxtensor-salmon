@@ -34,6 +34,8 @@ domain（入力）と codomain（出力）に分かれます。この2つの次�
 箱は射、三角形は状態、下へ枝分かれする黒丸は copy、黒丸で終わる紐は discard
 です。図の描き方は Fritz, arXiv:1908.07021 に合わせ、図自体は別に描いています。
 TikZ のソースはリポジトリの ``docs/diagrams/`` にあります。
+このサイトが使う SVG は ``docs/_static/figures/`` のローカルコピーです。
+Issue を解決したときに図を足す手順は :doc:`contributing` にあります。
 
 ``tests/test_axioms.py`` は、モノイド構造と余モノイドの等式（結合律、交換律、
 copy の法則、discard の自然性）を、具体的な有限テンソルの上で確認します。
