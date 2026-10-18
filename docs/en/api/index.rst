@@ -2,9 +2,10 @@ API reference
 =============
 
 The installed package exports :class:`fxtensor_salmon.FXTensor`. The class is
-implemented in ``core``, ``io``, ``operations``, ``special``, and ``profile``;
-those modules are not a separate public API. Their methods are documented on
-``FXTensor``.
+implemented in ``core``, ``io``, ``operations``, ``special``, ``profile``,
+and ``independence``. Conditional independence lives in
+:mod:`fxtensor_salmon.independence` and is documented both there and on
+``FXTensor``. The other modules are not a separate public API.
 
 DisCoPy helpers are :mod:`fxtensor_salmon.discopy`. Importing that module
 needs the ``discopy`` extra.

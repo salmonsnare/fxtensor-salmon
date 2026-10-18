@@ -31,6 +31,7 @@ domain（入力）と codomain（出力）に分かれます。この2つの次�
      - :meth:`~fxtensor_salmon.FXTensor.copy_tensor` と :meth:`~fxtensor_salmon.FXTensor.exclamation`
 
 このドキュメントのストリング図は **上から下** に読みます（入力が上、出力が下）。
+条件付き独立性の図だけは **下から上** に読みます。
 箱は射、三角形は状態、下へ枝分かれする黒丸は copy、黒丸で終わる紐は discard
 です。図の描き方は Fritz, arXiv:1908.07021 に合わせ、図自体は別に描いています。
 TikZ のソースはリポジトリの ``docs/diagrams/`` にあります。

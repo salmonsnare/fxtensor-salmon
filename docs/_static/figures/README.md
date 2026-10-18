@@ -2,7 +2,7 @@
 
 Published string diagrams for the Sphinx site live in this folder. The HTML build copies it with the rest of `docs/_static/`, and the English and Japanese pages reference these files (they do not hotlink GitHub).
 
-TikZ sources stay in [`docs/diagrams/`](../../diagrams/). Shared drawing style: `docs/diagrams/fritzstrings.sty`. Diagrams are read top to bottom.
+TikZ sources stay in [`docs/diagrams/`](../../diagrams/). Shared drawing style: `docs/diagrams/fritzstrings.sty`. Those diagrams are read top to bottom. `conditional_independence.svg` (and the PNG beside it) is read bottom to top; its LuaLaTeX source is skipped by `docs/diagrams/build.sh`.
 
 When an issue is resolved, add a corresponding TikZ figure to the docs:
 
@@ -22,3 +22,4 @@ Figures currently published here, and the pages that show them:
 | `discard_naturality.svg` | Structural morphisms | 構造射 |
 | `bayesian_inversion.svg` | Conditioning and inference | 条件付けと推論 |
 | `almost_surely_equal.svg` | Conditioning and inference | 条件付けと推論 |
+| `conditional_independence.svg` (also `.png`; read bottom to top) | Conditional independence | 条件付き独立性 |

@@ -11,6 +11,7 @@ scripts with ``docs/check_examples.py``.
    concepts
    operations
    inference
+   independence
    structural
    io
    discopy
