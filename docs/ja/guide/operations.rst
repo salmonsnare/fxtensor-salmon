@@ -20,15 +20,19 @@ codomain と引数の domain を縮約します。プロファイルが一致し
    :start-after: # docs:example product-labels
    :end-before: # docs:end product-labels
 
-.. figure:: ../../diagrams/composition.svg
+.. figure:: ../../_static/figures/composition.svg
    :alt: 上から下へ読む逐次合成
    :width: 140px
    :align: center
 
-.. figure:: ../../diagrams/tensor_product.svg
+   逐次合成 ``f ; g``。
+
+.. figure:: ../../_static/figures/tensor_product.svg
    :alt: 2つの射のテンソル積
    :width: 180px
    :align: center
+
+   テンソル積 ``f ⊗ g``。
 
 周辺化
 ------

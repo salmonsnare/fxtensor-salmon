@@ -39,12 +39,12 @@ labeled.
    :start-after: # docs:example composition
    :end-before: # docs:end composition
 
-.. figure:: ../diagrams/composition.svg
+.. figure:: ../_static/figures/composition.svg
    :alt: Two morphisms composed in series, read from top to bottom
    :width: 140px
    :align: center
 
-   Sequential composition.
+   Sequential composition, ``f ; g``.
 
 Tensor product
 --------------
@@ -57,12 +57,12 @@ domain stays empty, so its label group is ``None``.
    :start-after: # docs:example tensor-product
    :end-before: # docs:end tensor-product
 
-.. figure:: ../diagrams/tensor_product.svg
+.. figure:: ../_static/figures/tensor_product.svg
    :alt: Two morphisms placed side by side
    :width: 180px
    :align: center
 
-   Tensor product.
+   Tensor product, ``f ⊗ g``.
 
 Weather
 -------

@@ -36,7 +36,9 @@ the top, outputs at the bottom). A box is a morphism, a triangle is a state,
 a dot that branches downward is copy, and a wire that ends in a dot is
 discard. The figures follow the drawing conventions of Fritz,
 arXiv:1908.07021, and are drawn separately. TikZ sources live in
-``docs/diagrams/`` in the repository.
+``docs/diagrams/``. The SVGs used by these pages are the local copies in
+``docs/_static/figures/``. :doc:`contributing` is the note for adding a
+figure when an issue is resolved.
 
 The test module ``tests/test_axioms.py`` checks the finite-tensor forms of
 the monoidal and comonoid equations (associativity, interchange, copy laws,

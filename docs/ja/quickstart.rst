@@ -38,12 +38,12 @@ domain の軸が先、そのあとが codomain です。
    :start-after: # docs:example composition
    :end-before: # docs:end composition
 
-.. figure:: ../diagrams/composition.svg
+.. figure:: ../_static/figures/composition.svg
    :alt: 上から下へ読む、2つの射の逐次合成
    :width: 140px
    :align: center
 
-   逐次合成。
+   逐次合成 ``f ; g``。
 
 テンソル積
 ----------
@@ -56,12 +56,12 @@ domain の軸が先、そのあとが codomain です。
    :start-after: # docs:example tensor-product
    :end-before: # docs:end tensor-product
 
-.. figure:: ../diagrams/tensor_product.svg
+.. figure:: ../_static/figures/tensor_product.svg
    :alt: 2つの射を並べたテンソル積
    :width: 180px
    :align: center
 
-   テンソル積。
+   テンソル積 ``f ⊗ g``。
 
 天気
 ----

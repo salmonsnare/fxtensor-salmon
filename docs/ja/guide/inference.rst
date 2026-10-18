@@ -42,10 +42,12 @@
 そうでなければ事前状態から取ります。このメソッドが返すテンソルでは、有限の等式
 ``p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)`` が成り立ちます。
 
-.. figure:: ../../diagrams/bayesian_inversion.svg
+.. figure:: ../../_static/figures/bayesian_inversion.svg
    :alt: 上から下へ読むベイズ反転の等式
    :width: 220px
    :align: center
+
+   ベイズ反転: ``p ; copy ; (id ⊗ f) = p ; f ; copy ; (f† ⊗ id)``。
 
 .. literalinclude:: ../../examples/inference.py
    :language: python
@@ -66,10 +68,12 @@
 場所で ``self`` も 0 かを見ます。核では入力ごとに確認します。プロファイルは
 一致している必要があり、ラベルは比べません。
 
-.. figure:: ../../diagrams/almost_surely_equal.svg
+.. figure:: ../../_static/figures/almost_surely_equal.svg
    :alt: 事前状態のもとでの2つの核のほとんど確実な等価
    :width: 220px
    :align: center
+
+   ほとんど確実な等価: ``p ; copy ; (id ⊗ f) = p ; copy ; (id ⊗ g)``。
 
 .. literalinclude:: ../../examples/inference.py
    :language: python

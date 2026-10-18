@@ -42,25 +42,33 @@ On these tensors, copy is cocommutative, coassociative, and counital, and
 discard is natural: ``f ; ! = !`` when ``f`` is a kernel. A deterministic
 kernel commutes with copy.
 
-.. figure:: ../../diagrams/copy_associativity.svg
+.. figure:: ../../_static/figures/copy_associativity.svg
    :alt: Coassociativity of copy
    :width: 200px
    :align: center
 
-.. figure:: ../../diagrams/copy_counitality.svg
+   Copy is coassociative.
+
+.. figure:: ../../_static/figures/copy_counitality.svg
    :alt: Counitality of copy
    :width: 200px
    :align: center
 
-.. figure:: ../../diagrams/copy_commutativity.svg
+   Copy is counital.
+
+.. figure:: ../../_static/figures/copy_commutativity.svg
    :alt: Cocommutativity of copy
    :width: 180px
    :align: center
 
-.. figure:: ../../diagrams/discard_naturality.svg
+   Copy is cocommutative.
+
+.. figure:: ../../_static/figures/discard_naturality.svg
    :alt: Discard is natural, so f composed with discard equals discard
    :width: 180px
    :align: center
+
+   Discard is natural: ``f ; ! = !``.
 
 .. literalinclude:: ../../examples/structural.py
    :language: python
