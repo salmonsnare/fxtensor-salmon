@@ -12,6 +12,7 @@
    operations
    inference
    independence
+   exchangeability
    structural
    io
    discopy

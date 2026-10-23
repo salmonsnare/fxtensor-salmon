@@ -176,6 +176,40 @@ weather_umbrella = joint.marginalization(3)
 assert not weather_umbrella.is_independent(2)
 ```
 
+### 交換可能性：バイアスが未知のコイン
+
+コインのバイアスに事前分布を置くと、投げた結果の列は交換可能です。その事前分布が一点に集中していなければ、投げは独立ではありません。
+
+状態 `p: I → X^{⊗n}` が位置 `k`（1 始まり）で交換可能とは、`k` 番目と `(k+1)` 番目の紐を入れ替えても変わらないことです。`p ; (id^{⊗(k-1)} ⊗ swap(X,X) ⊗ id^{⊗(n-k-1)}) = p` で、`(k-1) + 2 + (n-k-1) = n` です。列 `p_n: I → X^{⊗n}` が Kolmogorov 整合的とは、`n` 番目の紐を破棄すると `p_{n-1}` に戻ることです。`p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}`。
+
+<img src="docs/_static/figures/exchangeability.svg" alt="p ; (id^{⊗(k-1)} ⊗ swap(X,X) ⊗ id^{⊗(n-k-1)}) = p">
+
+<img src="docs/_static/figures/kolmogorov_consistency.svg" alt="p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}">
+
+```python
+bias = ["公平", "表に偏る"]
+side = ["表", "裏"]
+prior = FXTensor([[], [bias]], data=np.array([0.5, 0.5]))
+kernel = FXTensor(
+    [[bias], [side]],
+    data=np.array([
+        [0.5, 0.5],  # 公平
+        [0.9, 0.1],  # 表に偏る
+    ]),
+)
+flips = FXTensor.mixture_of_iid(prior, kernel, 3)
+assert flips.labels == (None, [side, side, side])
+assert flips.is_exchangeable()
+sequence = [FXTensor.mixture_of_iid(prior, kernel, n) for n in range(1, 5)]
+assert FXTensor.is_kolmogorov_consistent(sequence)
+pair = flips.marginalization(3)
+assert not pair.is_independent(2)
+
+point = FXTensor([[], [bias]], data=np.array([0.0, 1.0]))
+fixed = FXTensor.mixture_of_iid(point, kernel, 3)
+assert fixed.is_independent(2)
+```
+
 ## 発展的な例：多次元システム（ラベル付き）
 
 **場所**（市街地、田舎）を条件とする **季節**（春、夏、その他）と **天気**（晴れ、雨）をモデル化します。
@@ -404,6 +438,11 @@ copy は余結合的・余単位的・余可換です:
 | `is_conditionally_independent` | 余域 `X ⊗ Y ⊗ Z` で `Z` を与えた `X ⊥ Y` | 状態または核を copy–discard 等式で判定する |
 | `conditional_product` | `X ⊗ Z` と `Y ⊗ Z` の同時分布から `X ⊗ Y ⊗ Z` を作る | 条件付き独立な同時分布を作る（状態、または domain を共有する核） |
 | `is_independent` | `Z` が空のときの `X ⊥ Y` | 条件付き独立性の特別な場合 |
+| `is_exchangeable` | `I → X^{⊗n}` が隣接する swap で不変か | `k` 番目と `(k+1)` 番目の因子を入れ替えても状態が変わらないかを調べる |
+| `symmetrize` | 因子のあらゆる置換で平均する | 同時状態を交換可能な状態にする |
+| `is_kolmogorov_consistent` | `p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}` | `n` 番目の紐を破棄すると一つ前の状態に戻るかを調べる |
+| `iid` | `p ⊗ … ⊗ p` | i.i.d. な状態または核を作る |
+| `mixture_of_iid` | `prior ; copy_Θ^{(n)} ; kernel^{⊗n}` | i.i.d. 列の混合を作る（交換可能。独立なのは Dirac 事前分布のときだけ） |
 | `bayesian_inversion` | `f: X → Y` と事前分布 `I → X` → `f†: Y → X` | ベイズ更新・事後分布の核を作る |
 | `almost_surely_equal` | `f = g`（p-ほとんど確実に） | 事前分布が質量を持つ点だけで核を比較する |
 | `is_absolutely_continuous` | `p ≪ q` | 状態・核の台の包含を確認する |
@@ -560,3 +599,5 @@ pytest
 - [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
 - [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
 - [5] [T. Fritz, T. Gonda, A. Lorenzin, P. Perrone, D. Stein, Absolute continuity, supports and idempotent splitting in categorical probability (arXiv:2308.00651)](https://arxiv.org/abs/2308.00651)
+- [6] [T. Fritz, T. Gonda, P. Perrone, De Finetti's theorem in categorical probability (arXiv:2105.02639)](https://arxiv.org/abs/2105.02639)
+- [7] [F. Vaccarino, Statistical models as natural transformations (arXiv:2609.22929)](https://arxiv.org/abs/2609.22929)

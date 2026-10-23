@@ -9,9 +9,10 @@ copy that SVG into ``docs/_static/figures/``. Put the figure on the relevant
 page in both English and Japanese, with a caption in each language. The same
 steps are written in ``docs/_static/figures/README.md``.
 
-The eight diagrams shipped with the README are already in that folder:
+The diagrams shipped with the README are already in that folder:
 composition, tensor product, the three copy laws, naturality of discard,
-Bayesian inversion, and almost-sure equality.
+Bayesian inversion, almost-sure equality, exchangeability, and Kolmogorov
+consistency.
 
 ``conditional_independence.tex`` is a LuaLaTeX figure, so
 ``docs/diagrams/build.sh`` skips it. Its SVG and PNG are already in

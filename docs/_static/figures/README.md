@@ -23,3 +23,5 @@ Figures currently published here, and the pages that show them:
 | `bayesian_inversion.svg` | Conditioning and inference | 条件付けと推論 |
 | `almost_surely_equal.svg` | Conditioning and inference | 条件付けと推論 |
 | `conditional_independence.svg` (also `.png`; read bottom to top) | Conditional independence | 条件付き独立性 |
+| `exchangeability.svg` (also `.png`; read top to bottom) | Exchangeability | 交換可能性 |
+| `kolmogorov_consistency.svg` (also `.png`; read top to bottom) | Exchangeability | 交換可能性 |

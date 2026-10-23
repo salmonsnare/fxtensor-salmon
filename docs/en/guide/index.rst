@@ -12,6 +12,7 @@ scripts with ``docs/check_examples.py``.
    operations
    inference
    independence
+   exchangeability
    structural
    io
    discopy

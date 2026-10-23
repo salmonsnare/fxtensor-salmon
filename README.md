@@ -176,6 +176,40 @@ weather_umbrella = joint.marginalization(3)
 assert not weather_umbrella.is_independent(2)
 ```
 
+### Exchangeability: a coin with an unknown bias
+
+A prior on the bias of a coin makes the sequence of flips exchangeable. The flips are not independent, unless that prior is a point mass.
+
+A state `p: I → X^{⊗n}` is exchangeable at position `k` (1-based) when swapping the `k`-th and `(k+1)`-th wires leaves it unchanged: `p ; (id^{⊗(k-1)} ⊗ swap(X,X) ⊗ id^{⊗(n-k-1)}) = p`, with `(k-1) + 2 + (n-k-1) = n`. A sequence `p_n: I → X^{⊗n}` is Kolmogorov consistent when discarding the `n`-th wire recovers `p_{n-1}`: `p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}`.
+
+<img src="https://raw.githubusercontent.com/salmonsnare/fxtensor-salmon/main/docs/_static/figures/exchangeability.svg" alt="p ; (id^{⊗(k-1)} ⊗ swap(X,X) ⊗ id^{⊗(n-k-1)}) = p">
+
+<img src="https://raw.githubusercontent.com/salmonsnare/fxtensor-salmon/main/docs/_static/figures/kolmogorov_consistency.svg" alt="p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}">
+
+```python
+bias = ["fair", "heads"]
+side = ["H", "T"]
+prior = FXTensor([[], [bias]], data=np.array([0.5, 0.5]))
+kernel = FXTensor(
+    [[bias], [side]],
+    data=np.array([
+        [0.5, 0.5],  # fair
+        [0.9, 0.1],  # heads
+    ]),
+)
+flips = FXTensor.mixture_of_iid(prior, kernel, 3)
+assert flips.labels == (None, [side, side, side])
+assert flips.is_exchangeable()
+sequence = [FXTensor.mixture_of_iid(prior, kernel, n) for n in range(1, 5)]
+assert FXTensor.is_kolmogorov_consistent(sequence)
+pair = flips.marginalization(3)
+assert not pair.is_independent(2)
+
+point = FXTensor([[], [bias]], data=np.array([0.0, 1.0]))
+fixed = FXTensor.mixture_of_iid(point, kernel, 3)
+assert fixed.is_independent(2)
+```
+
 ## Advanced Example: Multidimensional System (Labeled)
 
 Model **Season** (Spring, Summer, Other) and **Weather** (Sunny, Rainy) given **Location** (Urban, Rural).
@@ -404,6 +438,11 @@ Every morphism is Markov (discard is natural), `f ; ! = !` — in `FXTensor`, ea
 | `is_conditionally_independent` | `X ⊥ Y` given `Z`, codomain `X ⊗ Y ⊗ Z` | Test a state or kernel against the copy–discard equation |
 | `conditional_product` | Joint on `X ⊗ Y ⊗ Z` from joints on `X ⊗ Z` and `Y ⊗ Z` | Build a conditionally independent joint (states or kernels that share a domain) |
 | `is_independent` | `X ⊥ Y` when `Z` is empty | Special case of conditional independence |
+| `is_exchangeable` | Invariance of `I → X^{⊗n}` under adjacent swaps | Test whether swapping the `k`-th and `(k+1)`-th factors leaves a state unchanged |
+| `symmetrize` | Average over permutations of the factors | Turn a joint state into an exchangeable one |
+| `is_kolmogorov_consistent` | `p_n ; (id^{⊗(n-1)} ⊗ !) = p_{n-1}` | Check that discarding the `n`-th wire recovers the previous state |
+| `iid` | `p ⊗ … ⊗ p` | Build an i.i.d. state or kernel |
+| `mixture_of_iid` | `prior ; copy_Θ^{(n)} ; kernel^{⊗n}` | Mix i.i.d. sequences (exchangeable, and independent only for a Dirac prior) |
 | `bayesian_inversion` | `f: X → Y` and prior `I → X` → `f†: Y → X` | Bayesian update / posterior kernel |
 | `almost_surely_equal` | `f = g` p-a.s. | Compare kernels only where the prior has mass |
 | `is_absolutely_continuous` | `p ≪ q` | Check support inclusion of states / kernels |
@@ -560,3 +599,5 @@ pytest
 - [3] [K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322)](https://arxiv.org/abs/1709.00322)
 - [4] [T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021)](https://arxiv.org/abs/1908.07021)
 - [5] [T. Fritz, T. Gonda, A. Lorenzin, P. Perrone, D. Stein, Absolute continuity, supports and idempotent splitting in categorical probability (arXiv:2308.00651)](https://arxiv.org/abs/2308.00651)
+- [6] [T. Fritz, T. Gonda, P. Perrone, De Finetti's theorem in categorical probability (arXiv:2105.02639)](https://arxiv.org/abs/2105.02639)
+- [7] [F. Vaccarino, Statistical models as natural transformations (arXiv:2609.22929)](https://arxiv.org/abs/2609.22929)
