@@ -1,0 +1,31 @@
+% p_n ; (id^{\otimes(n-1)} \otimes !) = p_{n-1}
+% Read top to bottom. Discarding the n-th wire of p_n yields p_{n-1}.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \begin{scope}[xshift=-3.15cm]
+    \draw[fill=white] (-0.7,3.15) -- (0.7,3.15) -- (1.85,1.85) -- (-1.85,1.85) -- cycle;
+    \node at (0,2.28) {$p_n$};
+    \draw (-0.85,1.85) -- (-0.85,-1.35);
+    \node[bn] (d) at (0.85,-0.15) {};
+    \draw (0.85,1.85) -- (d);
+    \node[wl,right] at (0.95,0.85) {$X$};
+    \node[wl,right] at (1.02,-0.15) {$!$};
+    \node[wl,below] at (-0.85,-1.35) {$X^{\otimes(n-1)}$};
+    \node[wl,below] at (-0.85,-2.05) {$\mathrm{id}^{\otimes(n-1)}$};
+  \end{scope}
+
+  \node[eq] at (0,0.55) {$=$};
+
+  \begin{scope}[xshift=2.85cm]
+    \draw[fill=white] (-0.7,3.15) -- (0.7,3.15) -- (1.35,1.85) -- (-1.35,1.85) -- cycle;
+    \node at (0,2.28) {$p_{n-1}$};
+    \draw (0,1.85) -- (0,-1.35);
+    \node[wl,below] at (0,-1.35) {$X^{\otimes(n-1)}$};
+  \end{scope}
+
+  \node[font=\small] at (0,-3.15)
+    {$p_n\,;\,\bigl(\mathrm{id}^{\otimes(n-1)}\otimes !\bigr)=p_{n-1}$};
+\end{tikzpicture}
+\end{document}

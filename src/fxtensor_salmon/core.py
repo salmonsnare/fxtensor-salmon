@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from typing import List, Tuple, Union, Optional
 
+from .exchangeability import ExchangeabilityMixin
 from .independence import IndependenceMixin
 from .io import IOMixin
 from .operations import OperationsMixin
@@ -9,7 +10,7 @@ from .profile import _constructor_profile, _parse_profile
 from .special import SpecialMixin
 
 
-class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin):
+class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, ExchangeabilityMixin):
     """A tensor with support for string-labeled dimensions and tensor operations."""
 
     _RTOL = 1e-05

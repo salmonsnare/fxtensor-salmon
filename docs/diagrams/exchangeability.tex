@@ -1,0 +1,47 @@
+% p ; (id^{\otimes(k-1)} \otimes swap(X,X) \otimes id^{\otimes(n-k-1)}) = p
+% Read top to bottom. Swapping the k-th and (k+1)-th wires leaves p unchanged.
+% The four wires are X^{\otimes(k-1)}, X, X, X^{\otimes(n-k-1)},
+% and (k-1) + 2 + (n-k-1) = n.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{fritzstrings}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \begin{scope}[xshift=-5.15cm]
+    \draw[fill=white] (-0.85,3.55) -- (0.85,3.55) -- (4.15,2.15) -- (-4.15,2.15) -- cycle;
+    \node at (0,2.62) {$p$};
+    \draw (-3.05,2.15) -- (-3.05,-1.55);
+    \draw ( 3.35,2.15) -- ( 3.35,-1.55);
+    \draw (-1.05,2.15) -- (-1.05,0.85);
+    \draw ( 1.05,2.15) -- ( 1.05,0.85);
+    \draw (-1.05,0.85) to[out=-90,in=90] ( 1.05,-0.35);
+    \draw ( 1.05,0.85) to[out=-90,in=90] (-1.05,-0.35);
+    \draw (-1.05,-0.35) -- (-1.05,-1.55);
+    \draw ( 1.05,-0.35) -- ( 1.05,-1.55);
+    \node[wl,fill=white,inner sep=1.4pt] at (0,0.28) {$\mathrm{swap}(X,X)$};
+    \node[wl,below] at (-3.05,-1.55) {$X^{\otimes(k-1)}$};
+    \node[wl,below] at (-1.05,-1.55) {$X$};
+    \node[wl,below] at ( 1.05,-1.55) {$X$};
+    \node[wl,below] at ( 3.35,-1.55) {$X^{\otimes(n-k-1)}$};
+    \node[wl,below] at (-3.05,-2.25) {$\mathrm{id}^{\otimes(k-1)}$};
+    \node[wl,below] at ( 3.35,-2.25) {$\mathrm{id}^{\otimes(n-k-1)}$};
+  \end{scope}
+
+  \node[eq] at (0,0.55) {$=$};
+
+  \begin{scope}[xshift=5.15cm]
+    \draw[fill=white] (-0.85,3.55) -- (0.85,3.55) -- (4.15,2.15) -- (-4.15,2.15) -- cycle;
+    \node at (0,2.62) {$p$};
+    \draw (-3.05,2.15) -- (-3.05,-1.55);
+    \draw (-1.05,2.15) -- (-1.05,-1.55);
+    \draw ( 1.05,2.15) -- ( 1.05,-1.55);
+    \draw ( 3.35,2.15) -- ( 3.35,-1.55);
+    \node[wl,below] at (-3.05,-1.55) {$X^{\otimes(k-1)}$};
+    \node[wl,below] at (-1.05,-1.55) {$X$};
+    \node[wl,below] at ( 1.05,-1.55) {$X$};
+    \node[wl,below] at ( 3.35,-1.55) {$X^{\otimes(n-k-1)}$};
+  \end{scope}
+
+  \node[font=\small] at (0,-3.55)
+    {$p\,;\,\bigl(\mathrm{id}^{\otimes(k-1)}\otimes\mathrm{swap}(X,X)\otimes\mathrm{id}^{\otimes(n-k-1)}\bigr)=p$};
+\end{tikzpicture}
+\end{document}

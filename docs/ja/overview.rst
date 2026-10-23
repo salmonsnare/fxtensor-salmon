@@ -47,5 +47,7 @@ copy の法則、discard の自然性）を、具体的な有限テンソルの�
 - `K. Cho and B. Jacobs, Disintegration and Bayesian Inversion via String Diagrams (arXiv:1709.00322) <https://arxiv.org/abs/1709.00322>`_
 - `T. Fritz, A synthetic approach to Markov kernels, conditional independence and theorems on sufficient statistics (arXiv:1908.07021) <https://arxiv.org/abs/1908.07021>`_
 - `T. Fritz, T. Gonda, A. Lorenzin, P. Perrone, D. Stein, Absolute continuity, supports and idempotent splitting in categorical probability (arXiv:2308.00651) <https://arxiv.org/abs/2308.00651>`_
+- `T. Fritz, T. Gonda, P. Perrone, De Finetti's theorem in categorical probability (arXiv:2105.02639) <https://arxiv.org/abs/2105.02639>`_
+- `F. Vaccarino, Statistical models as natural transformations (arXiv:2609.22929) <https://arxiv.org/abs/2609.22929>`_
 - `マルコフ圏 A First Look <https://m-hiyama.hatenablog.com/entry/2020/06/09/154044>`_
 - `マルコフ圏におけるテンソル計算の手順とコツ <https://m-hiyama.hatenablog.com/entry/2021/04/05/153325>`_

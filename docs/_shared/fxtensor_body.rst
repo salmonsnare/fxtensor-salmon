@@ -24,6 +24,11 @@
    FXTensor.is_conditionally_independent
    FXTensor.is_independent
    FXTensor.conditional_product
+   FXTensor.is_exchangeable
+   FXTensor.symmetrize
+   FXTensor.is_kolmogorov_consistent
+   FXTensor.iid
+   FXTensor.mixture_of_iid
    FXTensor.bayesian_inversion
    FXTensor.support
    FXTensor.almost_surely_equal
@@ -53,6 +58,14 @@ The conditional-independence methods are implemented in
 :mod:`fxtensor_salmon.independence` and mixed into ``FXTensor``.
 
 .. automodule:: fxtensor_salmon.independence
+   :members:
+   :show-inheritance:
+   :no-index:
+
+The exchangeability methods are implemented in
+:mod:`fxtensor_salmon.exchangeability` and mixed into ``FXTensor``.
+
+.. automodule:: fxtensor_salmon.exchangeability
    :members:
    :show-inheritance:
    :no-index:
