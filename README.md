@@ -13,6 +13,7 @@ An FXTensor is defined by its `profile` and `data`, with optional string labels 
 
 - **Profile**: A pair `[domain, codomain]` specifying the dimensions of input (domain) and output (codomain) indices. For labeled tensors, e.g., `[[['a', 'b']], [['x', 'y', 'z']]]` represents a 2x3 matrix with labeled rows and columns. For unlabeled tensors, `[[2], [3]]` specifies dimensions numerically.
 - **Labels (Optional)**: String labels can be assigned to each dimension, enhancing interpretability. For example, input axis labeled `['a', 'b']` and output axis labeled `['x', 'y', 'z']`. Unlabeled tensors have `labels` set to `None`.
+- **Names (Optional)**: Each axis can also carry a variable name, separate from the labels of its values. `marginal`, `permute`, and `observe` use these names. With `names=None`, existing operations are unchanged.
 - **Data**: A NumPy array holding the tensor’s values. Its shape must match the total number of dimensions in the profile (`len(domain) + len(codomain)`).
 
 ## Usage Examples
@@ -208,6 +209,39 @@ assert not pair.is_independent(2)
 point = FXTensor([[], [bias]], data=np.array([0.0, 1.0]))
 fixed = FXTensor.mixture_of_iid(point, kernel, 3)
 assert fixed.is_independent(2)
+```
+
+### Named axes: marginal and observe
+
+Labels name the points on a wire (`low`, `high`). Names name the wires (`A`, `C`, `D`), so two wires can share labels and still be told apart. Keeping wire `B` of a state `p: I → A ⊗ B ⊗ C` is the wiring `p ; (! ⊗ id_B ⊗ !) = p_B`. Reordering wires is a permutation.
+
+<img src="https://raw.githubusercontent.com/salmonsnare/fxtensor-salmon/main/docs/_static/figures/named_marginal.svg" alt="p ; (! ⊗ id_B ⊗ !) = p_B">
+
+<img src="https://raw.githubusercontent.com/salmonsnare/fxtensor-salmon/main/docs/_static/figures/named_permute.svg" alt="p ; sigma_{C,A,B} = p'">
+
+```python
+level = ["low", "high"]
+prior_data = np.array([0.25, 0.75])
+given_a = np.array([
+    [0.8, 0.2],  # A = low
+    [0.4, 0.6],  # A = high
+])
+given_c = np.array([
+    [0.9, 0.1],  # C = low
+    [0.3, 0.7],  # C = high
+])
+joint = FXTensor(
+    [[], [level, level, level]],
+    data=prior_data[:, None, None] * given_a[:, :, None] * given_c[None, :, :],
+    names=([], ["A", "C", "D"]),
+)
+post, evidence = joint.observe(C="high")
+assert post.names == (None, ["A", "D"])
+prior = FXTensor([[], [level]], data=prior_data, names=([], ["A"]))
+kernel = FXTensor([[level], [level]], data=given_a, names=(["A"], ["C"]))
+inversion = kernel.bayesian_inversion(prior)
+assert np.allclose(post.marginal("A").data, inversion.data[1])
+assert np.isclose(evidence, joint.marginal("C").data[1])
 ```
 
 ## Advanced Example: Multidimensional System (Labeled)
@@ -431,6 +465,10 @@ Every morphism is Markov (discard is natural), `f ; ! = !` — in `FXTensor`, ea
 | `composition` | Sequential composition `A→B` then `B→C` | Wire processes in series, or apply a kernel to a state |
 | `tensor_product` | Monoidal product | Place independent systems side by side |
 | `marginalization` | Discard a suffix of the outputs | Sum out axes you no longer need |
+| `marginal` | Keep named codomain wires | Sum out the others, including a middle wire |
+| `marginalize` | Drop named codomain wires | Name the wires to discard; the rest stay in order |
+| `permute` | Reorder codomain wires by name | Move a wire without building a wiring kernel |
+| `observe` | Condition a state on `name=label` | Posterior joint and the probability of the evidence |
 | `conditionalization` | Joint state → kernel | Split a joint distribution into a conditional (states only) |
 | `partial_composition` | Compose only some output wires | Keep a prefix of the outputs and feed the suffix into another kernel |
 | `jointification` | Joint of two states | Combine two independent states (states only) |

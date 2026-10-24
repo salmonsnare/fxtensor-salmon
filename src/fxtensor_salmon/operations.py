@@ -1,12 +1,24 @@
 from __future__ import annotations
 import numpy as np
 
+from .naming import (
+    _composition_names,
+    _keep_codomain_prefix,
+    _keep_codomain_suffix,
+    _split_codomain_names,
+    _swapped_names,
+    _tensor_names,
+)
 from .profile import _constructor_profile
 
 
 class OperationsMixin:
-    def _spawn(self, domain, codomain, labels, data):
-        return type(self)(_constructor_profile(domain, codomain, labels), data=data)
+    def _spawn(self, domain, codomain, labels, data, names=None):
+        return type(self)(
+            _constructor_profile(domain, codomain, labels),
+            data=data,
+            names=names,
+        )
 
     def composition(self, other: 'FXTensor') -> 'FXTensor':
         """Standard tensor composition."""
@@ -19,8 +31,14 @@ class OperationsMixin:
         new_labels = None
         if self._labels is not None and other._labels is not None:
             new_labels = (self._labels[0], other._labels[1])
+        new_names = _composition_names(
+            self._names,
+            other._names,
+            len(self._profile[0]),
+            len(other._profile[1]),
+        )
         result_data = np.tensordot(self.data, other.data, axes=(self_codomain_axes, other_domain_axes))
-        return self._spawn(new_domain, new_codomain, new_labels, result_data)
+        return self._spawn(new_domain, new_codomain, new_labels, result_data, new_names)
 
     def tensor_product(self, other: 'FXTensor') -> 'FXTensor':
         """Perform tensor product operation."""
@@ -43,7 +61,8 @@ class OperationsMixin:
         self_reshaped = self.data.reshape(self._profile[0] + [1]*other_dom_len + self._profile[1] + [1]*other_cod_len)
         other_reshaped = other.data.reshape([1]*self_dom_len + other._profile[0] + [1]*self_cod_len + other._profile[1])
         new_data = self_reshaped * other_reshaped
-        return self._spawn(new_domain, new_codomain, new_labels, new_data)
+        new_names = _tensor_names(self._names, other._names, self.data.ndim, other.data.ndim)
+        return self._spawn(new_domain, new_codomain, new_labels, new_data, new_names)
 
     def is_markov(self) -> bool:
         """Check if the tensor is a Markov tensor.
@@ -78,7 +97,8 @@ class OperationsMixin:
         sum_over_codomain = np.sum(self.data, axis=tuple(range(split_point, len(self._profile[1]))), keepdims=True)
         sum_over_codomain[sum_over_codomain == 0] = 1
         new_data = self.data / sum_over_codomain
-        return self._spawn(new_domain, new_codomain, new_labels, new_data)
+        new_names = _split_codomain_names(self._names, split_point)
+        return self._spawn(new_domain, new_codomain, new_labels, new_data, new_names)
 
     def conditional(self, concat_start_index: int) -> 'FXTensor':
         """Conditional of a kernel ``f: A → X ⊗ Y`` as ``A ⊗ X → Y``.
@@ -105,7 +125,8 @@ class OperationsMixin:
         sum_axes = tuple(range(domain_len + split_point, self.data.ndim))
         denom = np.sum(self.data, axis=sum_axes, keepdims=True)
         denom[denom == 0] = 1
-        return self._spawn(new_domain, new_codomain, new_labels, self.data / denom)
+        new_names = _split_codomain_names(self._names, split_point)
+        return self._spawn(new_domain, new_codomain, new_labels, self.data / denom, new_names)
 
     def bayesian_inversion(self, prior: 'FXTensor') -> 'FXTensor':
         """Bayesian inversion of ``f: X → Y`` with respect to ``prior: I → X``.
@@ -135,7 +156,13 @@ class OperationsMixin:
         new_labels = None
         if (x_labels is not None or not x_len) and (y_labels is not None or not y_len):
             new_labels = (y_labels or [], x_labels or [])
-        return self._spawn(self._profile[1], self._profile[0], new_labels, new_data)
+        return self._spawn(
+            self._profile[1],
+            self._profile[0],
+            new_labels,
+            new_data,
+            _swapped_names(self._names),
+        )
 
     def is_deterministic(self) -> bool:
         """Check whether every codomain slice is a point mass (one-hot).
@@ -162,7 +189,13 @@ class OperationsMixin:
         rtol = type(self)._RTOL
         atol = type(self)._ATOL
         mask = ~np.isclose(self.data, 0, rtol=rtol, atol=atol)
-        return self._spawn(self._profile[0], self._profile[1], self._labels, mask.astype(float))
+        return self._spawn(
+            self._profile[0],
+            self._profile[1],
+            self._labels,
+            mask.astype(float),
+            self._names,
+        )
 
     def almost_surely_equal(self, other: 'FXTensor', prior: 'FXTensor') -> bool:
         """Check ``self = other`` ``prior``-almost surely.
@@ -216,7 +249,8 @@ class OperationsMixin:
         new_labels = None
         if self._labels is not None:
             new_labels = (self._labels[0], self._labels[1][:start_B - 1])
-        return self._spawn(self._profile[0], new_codomain, new_labels, new_data)
+        new_names = _keep_codomain_prefix(self._names, start_B - 1)
+        return self._spawn(self._profile[0], new_codomain, new_labels, new_data, new_names)
 
     def jointification(self, other: 'FXTensor') -> 'FXTensor':
         """Create a joint state from two tensors."""
@@ -228,7 +262,10 @@ class OperationsMixin:
         new_labels = None
         if self._labels is not None and other._labels is not None:
             new_labels = ([], self._labels[1] + other._labels[1])
-        return self._spawn([], new_codomain, new_labels, result_data)
+        new_names = None
+        if self._names is not None and other._names is not None:
+            new_names = _tensor_names(self._names, other._names, 0, 0)
+        return self._spawn([], new_codomain, new_labels, result_data, new_names)
 
     def partial_composition(self, other: 'FXTensor', concat_start_index: int) -> 'FXTensor':
         """Perform partial composition."""
@@ -286,4 +323,5 @@ class OperationsMixin:
         new_labels = None
         if self._labels is not None:
             new_labels = (self._labels[0], self._labels[1][num_axes_to_sum:])
-        return self._spawn(self._profile[0], new_codomain, new_labels, new_data)
+        new_names = _keep_codomain_suffix(self._names, num_axes_to_sum)
+        return self._spawn(self._profile[0], new_codomain, new_labels, new_data, new_names)

@@ -8,12 +8,19 @@
    FXTensor
    FXTensor.profile
    FXTensor.labels
+   FXTensor.names
+   FXTensor.rename
+   FXTensor.axis
    FXTensor.get_label_index
    FXTensor.get_index_label
    FXTensor.copy
    FXTensor.composition
    FXTensor.tensor_product
    FXTensor.marginalization
+   FXTensor.marginal
+   FXTensor.marginalize
+   FXTensor.permute
+   FXTensor.observe
    FXTensor.discard_prefix
    FXTensor.first_marginalization
    FXTensor.second_marginalization
@@ -66,6 +73,14 @@ The exchangeability methods are implemented in
 :mod:`fxtensor_salmon.exchangeability` and mixed into ``FXTensor``.
 
 .. automodule:: fxtensor_salmon.exchangeability
+   :members:
+   :show-inheritance:
+   :no-index:
+
+The named-axis methods are implemented in :mod:`fxtensor_salmon.naming`
+and mixed into ``FXTensor``.
+
+.. automodule:: fxtensor_salmon.naming
    :members:
    :show-inheritance:
    :no-index:

@@ -4,7 +4,8 @@ Overview
 An :class:`~fxtensor_salmon.FXTensor` is a morphism between finite sets. The
 array axes are split into a **domain** (inputs) and a **codomain** (outputs).
 That pair of dimension lists is the **profile**. Each factor may carry a list
-of string labels; unlabeled factors store only their lengths.
+of string labels; unlabeled factors store only their lengths. An axis
+may also carry a name, separate from those labels. Names are optional.
 
 In a Markov category the objects are the finite sets and the morphisms are
 Markov kernels. On finite sets a kernel is a nonnegative array whose

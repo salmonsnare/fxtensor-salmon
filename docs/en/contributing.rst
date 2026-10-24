@@ -11,8 +11,8 @@ steps are written in ``docs/_static/figures/README.md``.
 
 The diagrams shipped with the README are already in that folder:
 composition, tensor product, the three copy laws, naturality of discard,
-Bayesian inversion, almost-sure equality, exchangeability, and Kolmogorov
-consistency.
+Bayesian inversion, almost-sure equality, exchangeability, Kolmogorov
+consistency, and named marginals and permutations.
 
 ``conditional_independence.tex`` is a LuaLaTeX figure, so
 ``docs/diagrams/build.sh`` skips it. Its SVG and PNG are already in

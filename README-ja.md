@@ -13,6 +13,7 @@ FXTensorのテンソルは、`profile`（次元情報）と`data`（値）によ
 
 - **プロファイル (Profile)**: `[domain, codomain]` の形式で、入力（domain）と出力（codomain）の次元を指定します。ラベル付きの場合、例えば `[[['a', 'b']], [['x', 'y', 'z']]]` は、2つの入力ラベルと3つの出力ラベルを持つ2x3行列を表します。ラベルなしの場合、`[[2], [3]]` のように数値で次元を指定します。
 - **ラベル (Labels, オプション)**: 各次元に文字列ラベルを付与可能で、システムの意味を明確にします。例えば、入力軸に `['a', 'b']`、出力軸に `['x', 'y', 'z']` を設定できます。ラベルなしの場合は、`labels` は `None` になります。
+- **名前 (Names, オプション)**: 各軸には、値のラベルとは別に変数名を付けられます。`marginal`、`permute`、`observe` がこの名前を使います。`names=None` のときは、これまでの操作はそのままです。
 - **データ (Data)**: テンソルの値を保持するNumPy配列。形状はプロファイルに基づき、domainとcodomainの次元の合計（`len(domain) + len(codomain)`）と一致します。
 
 ## 使用例
@@ -208,6 +209,39 @@ assert not pair.is_independent(2)
 point = FXTensor([[], [bias]], data=np.array([0.0, 1.0]))
 fixed = FXTensor.mixture_of_iid(point, kernel, 3)
 assert fixed.is_independent(2)
+```
+
+### 名前付きの軸：周辺化と観測
+
+ラベルは紐の上の点の名前（`低`、`高`）です。名前は紐そのものの名前（`A`、`C`、`D`）なので、同じラベルの紐でも区別できます。状態 `p: I → A ⊗ B ⊗ C` で `B` だけを残すのは、配線 `p ; (! ⊗ id_B ⊗ !) = p_B` です。紐の並べ替えは置換です。
+
+<img src="docs/_static/figures/named_marginal.svg" alt="p ; (! ⊗ id_B ⊗ !) = p_B">
+
+<img src="docs/_static/figures/named_permute.svg" alt="p ; sigma_{C,A,B} = p'">
+
+```python
+level = ["低", "高"]
+prior_data = np.array([0.25, 0.75])
+given_a = np.array([
+    [0.8, 0.2],  # A = 低
+    [0.4, 0.6],  # A = 高
+])
+given_c = np.array([
+    [0.9, 0.1],  # C = 低
+    [0.3, 0.7],  # C = 高
+])
+joint = FXTensor(
+    [[], [level, level, level]],
+    data=prior_data[:, None, None] * given_a[:, :, None] * given_c[None, :, :],
+    names=([], ["A", "C", "D"]),
+)
+post, evidence = joint.observe(C="高")
+assert post.names == (None, ["A", "D"])
+prior = FXTensor([[], [level]], data=prior_data, names=([], ["A"]))
+kernel = FXTensor([[level], [level]], data=given_a, names=(["A"], ["C"]))
+inversion = kernel.bayesian_inversion(prior)
+assert np.allclose(post.marginal("A").data, inversion.data[1])
+assert np.isclose(evidence, joint.marginal("C").data[1])
 ```
 
 ## 発展的な例：多次元システム（ラベル付き）
@@ -431,6 +465,10 @@ copy は余結合的・余単位的・余可換です:
 | `composition` | 逐次合成 `A→B` のあと `B→C` | プロセスを直列につなぐ。状態に核を適用する |
 | `tensor_product` | モノイド積 | 独立な系を並列に置く |
 | `marginalization` | 出力の接尾を破棄 | 不要な出力軸を和で落とす |
+| `marginal` | 名前を付けた codomain の紐だけ残す | 真ん中の紐も含めて、残りを和で落とす |
+| `marginalize` | 名前を付けた codomain の紐を落とす | 落とす紐を指定する。残りは元の順 |
+| `permute` | codomain の紐を名前の順に並べ替える | 配線核を自作せずに紐を移す |
+| `observe` | 状態を `名前=ラベル` で条件付ける | 事後の同時状態と証拠の確率を返す |
 | `conditionalization` | 同時状態 → 核 | 同時分布を条件付きに割る（状態専用） |
 | `partial_composition` | 一部のワイヤーだけ合成 | 出力の接頭は残し、接尾だけ次の核へつなぐ |
 | `jointification` | 2つの状態の同時化 | 独立な2つの状態から同時状態を作る（状態専用） |

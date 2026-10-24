@@ -10,12 +10,18 @@ from .profile import _constructor_profile, _parse_profile, _parse_strand
 class IOMixin:
     @classmethod
     def from_json(cls, json_data: Dict[str, Any]) -> 'FXTensor':
-        """Create a tensor from JSON data."""
+        """Create a tensor from JSON data.
+
+        A ``names`` entry, when present, is ``[domain names, codomain names]``.
+        JSON written before axis names existed has no ``names`` key; those
+        tensors stay unnamed.
+        """
         profile = json_data["profile"]
         domain_dims, codomain_dims, _labels = _parse_profile(profile)
         shape = tuple(domain_dims + codomain_dims)
         data = np.array(json_data["data"]).reshape(shape)
-        return cls(profile, data=data)
+        names = json_data["names"] if "names" in json_data else None
+        return cls(profile, data=data, names=names)
 
     @classmethod
     def from_strands(
@@ -41,14 +47,21 @@ class IOMixin:
         return tensor
 
     def to_json(self) -> dict:
-        """Convert the tensor to a JSON-serializable dictionary."""
+        """Convert the tensor to a JSON-serializable dictionary.
+
+        Unnamed tensors omit ``names``. Named tensors store
+        ``[domain names, codomain names]`` under ``names``.
+        """
         profile = _constructor_profile(self._profile[0], self._profile[1], self._labels)
         data = self.data.tolist()
-        return {
+        payload = {
             "profile": profile,
             "data": data,
             "dtype": str(self.data.dtype)
         }
+        if self._names is not None:
+            payload["names"] = [list(self._names[0]), list(self._names[1])]
+        return payload
 
     def save_to_file(self, filename: str) -> None:
         """Save the tensor to a JSON file."""

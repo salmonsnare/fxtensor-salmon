@@ -25,3 +25,5 @@ Figures currently published here, and the pages that show them:
 | `conditional_independence.svg` (also `.png`; read bottom to top) | Conditional independence | 条件付き独立性 |
 | `exchangeability.svg` (also `.png`; read top to bottom) | Exchangeability | 交換可能性 |
 | `kolmogorov_consistency.svg` (also `.png`; read top to bottom) | Exchangeability | 交換可能性 |
+| `named_marginal.svg` (also `.png`; read top to bottom) | Named axes | 名前付きの軸 |
+| `named_permute.svg` (also `.png`; read top to bottom) | Named axes | 名前付きの軸 |

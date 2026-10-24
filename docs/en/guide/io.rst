@@ -7,7 +7,9 @@ JSON
 :meth:`~fxtensor_salmon.FXTensor.to_json` returns a dictionary with
 ``profile``, ``data``, and ``dtype``. The profile is labeled when the tensor
 has labels. :meth:`~fxtensor_salmon.FXTensor.from_json` rebuilds a tensor from
-``profile`` and ``data``.
+``profile`` and ``data``. A ``names`` entry, when present, is the pair of
+domain and codomain axis names. JSON with no ``names`` key loads as an
+unnamed tensor.
 
 :meth:`~fxtensor_salmon.FXTensor.save_to_file` writes that dictionary as JSON.
 :meth:`~fxtensor_salmon.FXTensor.load_from_file` reads it back.
