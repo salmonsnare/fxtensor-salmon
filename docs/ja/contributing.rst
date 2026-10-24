@@ -9,7 +9,8 @@ Issue が解決したら、対応する TikZ の図をドキュメントに追�
 同じ手順は ``docs/_static/figures/README.md`` にもあります。
 
 README にある図（合成、テンソル積、copy の3つの法則、discard の自然性、
-ベイズ反転、ほとんど確実な等価、交換可能性、Kolmogorov 整合性）は、
+ベイズ反転、ほとんど確実な等価、交換可能性、Kolmogorov 整合性、
+名前付きの周辺化と並べ替え）は、
 すでにそのフォルダに入っています。
 
 ``conditional_independence.tex`` は LuaLaTeX の図なので、

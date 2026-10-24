@@ -10,6 +10,7 @@ scripts with ``docs/check_examples.py``.
 
    concepts
    operations
+   names
    inference
    independence
    exchangeability

@@ -205,7 +205,7 @@ class ExchangeabilityMixin:
             total += np.transpose(self.data, _permutation_axes(perm, width))
             n_perms += 1
         averaged = total / n_perms
-        return self._spawn(self._profile[0], self._profile[1], self._labels, averaged)
+        return self._spawn(self._profile[0], self._profile[1], self._labels, averaged, self._names)
 
     @classmethod
     def is_kolmogorov_consistent(cls, states, block=None, atol=None, rtol=None):

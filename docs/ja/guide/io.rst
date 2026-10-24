@@ -7,7 +7,8 @@ JSON
 :meth:`~fxtensor_salmon.FXTensor.to_json` は ``profile``、``data``、``dtype`` を
 持つ辞書を返します。ラベルがあるときはプロファイルもラベル付きです。
 :meth:`~fxtensor_salmon.FXTensor.from_json` は ``profile`` と ``data`` から
-テンソルを作り直します。
+テンソルを作り直します。``names`` があるときは、domain と codomain の
+軸の名前の組です。``names`` のない JSON は、名前のないテンソルとして読みます。
 
 :meth:`~fxtensor_salmon.FXTensor.save_to_file` はその辞書を JSON として書き、
 :meth:`~fxtensor_salmon.FXTensor.load_from_file` が読み戻します。

@@ -5,13 +5,18 @@ from typing import List, Tuple, Union, Optional
 from .exchangeability import ExchangeabilityMixin
 from .independence import IndependenceMixin
 from .io import IOMixin
+from .naming import NamingMixin, _normalize_names
 from .operations import OperationsMixin
 from .profile import _constructor_profile, _parse_profile
 from .special import SpecialMixin
 
 
-class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, ExchangeabilityMixin):
-    """A tensor with support for string-labeled dimensions and tensor operations."""
+class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, ExchangeabilityMixin, NamingMixin):
+    """A tensor with support for string-labeled dimensions and tensor operations.
+
+    Optional ``names`` give each axis a variable name. Names are not the
+    labels of the values on an axis. ``names=None`` leaves the tensor unnamed.
+    """
 
     _RTOL = 1e-05
     _ATOL = 1e-08
@@ -23,6 +28,7 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
             Tuple[List[int], List[int]]
         ],
         data: Optional[np.ndarray] = None,
+        names: Optional[Tuple[Optional[List[str]], Optional[List[str]]]] = None,
     ) -> None:
         domain_dims, codomain_dims, labels = _parse_profile(profile)
         self._labels = labels
@@ -35,6 +41,7 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
                 raise ValueError(f"Data shape {data.shape} does not match profile {shape}")
         else:
             self.data = np.zeros(shape)
+        self._names = _normalize_names(len(domain_dims), len(codomain_dims), names)
 
     @property
     def profile(self) -> List[List[int]]:
@@ -46,6 +53,20 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
         """Get the tensor's string labels."""
         domain = self._labels[0] if self._labels and self._labels[0] else None
         codomain = self._labels[1] if self._labels and self._labels[1] else None
+        return (domain, codomain)
+
+    @property
+    def names(self) -> Tuple[Optional[List[str]], Optional[List[str]]]:
+        """Axis names ``(domain, codomain)``.
+
+        ``(None, None)`` means the tensor was constructed without names.
+        ``None`` on one side means that side has no axes. Names are unique
+        across the tensor and are not value labels.
+        """
+        if self._names is None:
+            return (None, None)
+        domain = list(self._names[0]) if self._names[0] else None
+        codomain = list(self._names[1]) if self._names[1] else None
         return (domain, codomain)
 
     def get_label_index(self, axis: int, label: str) -> int:
@@ -77,9 +98,12 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
         if self._labels is not None:
             domain_labels = f"[{', '.join(['[' + ', '.join(dim) + ']' for dim in self._labels[0]])}]" if self._labels[0] else "[]"
             codomain_labels = f"[{', '.join(['[' + ', '.join(dim) + ']' for dim in self._labels[1]])}]" if self._labels[1] else "[]"
-            return f"FXTensor(profile={self.profile}, labels=({domain_labels}, {codomain_labels}), shape={self.data.shape})"
+            body = f"FXTensor(profile={self.profile}, labels=({domain_labels}, {codomain_labels}), shape={self.data.shape})"
         else:
-            return f"FXTensor(profile={self.profile}, shape={self.data.shape})"
+            body = f"FXTensor(profile={self.profile}, shape={self.data.shape})"
+        if self._names is None:
+            return body
+        return body.replace(", shape=", f", names={self.names}, shape=")
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, FXTensor):
@@ -87,6 +111,7 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
         return (
             self._profile == other._profile
             and self._labels == other._labels
+            and self._names == other._names
             and np.allclose(self.data, other.data, rtol=self._RTOL, atol=self._ATOL)
         )
 
@@ -102,6 +127,7 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
             tuple(self._profile[0]),
             tuple(self._profile[1]),
             labels_key,
+            self._names,
             self.data.shape,
             self.data.dtype.str,
             self.data.tobytes(),
@@ -109,7 +135,7 @@ class FXTensor(IOMixin, OperationsMixin, SpecialMixin, IndependenceMixin, Exchan
 
     def copy(self) -> 'FXTensor':
         profile = _constructor_profile(self._profile[0], self._profile[1], self._labels)
-        return type(self)(profile, data=np.array(self.data, copy=True))
+        return type(self)(profile, data=np.array(self.data, copy=True), names=self._names)
 
     def __copy__(self) -> 'FXTensor':
         return self.copy()

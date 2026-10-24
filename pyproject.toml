@@ -56,6 +56,7 @@ ignore = ["E501", "E711"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/fxtensor_salmon/io.py" = ["F821"]
+"src/fxtensor_salmon/naming.py" = ["F821"]
 "src/fxtensor_salmon/operations.py" = ["F821"]
 "src/fxtensor_salmon/special.py" = ["F821"]
 "tests/test_discopy.py" = ["E402"]

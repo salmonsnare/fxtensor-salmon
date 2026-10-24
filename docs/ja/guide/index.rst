@@ -10,6 +10,7 @@
 
    concepts
    operations
+   names
    inference
    independence
    exchangeability
